@@ -1,0 +1,12 @@
+
+outBest = .debug
+maxInstance = 20
+maxIter = 1
+batchSize = 1
+cnnLayerSize = 10
+hiddenSize = 50
+wordEmbSize = 5
+verboseIter = 1
+dropProb = -1
+wordEmbFineTune = true
+wordcontext = 2
