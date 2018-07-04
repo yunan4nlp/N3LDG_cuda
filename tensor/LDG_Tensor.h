@@ -10,33 +10,41 @@
 
 
 namespace LDG {
-	class Tensor {
-	public:
-		Tensor() : shape_(), v(NULL), device_type(CPU) {}
+class Tensor {
+public:
+    Tensor() : shape_(), v(NULL), device_type(CPU) {}
 
-		Tensor(const Shape& shape) : shape_(shape), v(NULL) {}
+    Tensor(const Shape& shape) : shape_(shape), v(NULL) {}
 
-		~Tensor() {
-			if(device_type == CUDA)
-				cudaFree(v);
-			if(device_type == CPU)
-				delete v;
-		}
+    ~Tensor() {
+        if(device_type == CUDA)
+            cudaFree(v);
+        if(device_type == CPU)
+            delete v;
+    }
 
-		/**
-		* Returns the shape of the Tensor.
-		* @return Shape of the Tensor.
-		*/
-		Shape shape() const {
-			return shape_;
-		}
+    /**
+     * Returns the shape of the Tensor.
+     * @return Shape of the Tensor.
+     */
+    const Shape& shape() const {
+        return shape_;
+    }
 
-		int device_type;
-		dtype *v;
-		Shape shape_;
-	};
+    int col() const {
+        return shape_.dims()[1];
+    }
 
-	typedef  Tensor* PTensor;
+    int row() const {
+        return shape_.dims()[0];
+    }
+
+    int device_type;
+    dtype *v;
+    Shape shape_;
+};
+
+typedef  Tensor* PTensor;
 }
 
 

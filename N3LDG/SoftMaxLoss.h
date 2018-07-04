@@ -8,7 +8,7 @@
 
 class SoftMaxLoss {
   public:
-    inline dtype loss(PNode x, const vector<dtype> &answer, Metric& eval, int batchsize = 1) {
+    dtype loss(PNode x, const vector<dtype> &answer, Metric& eval, int batchsize = 1) {
         int nDim = x->val.shape().dims()[0];
         int labelsize = answer.size();
         if (labelsize != nDim) {

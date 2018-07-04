@@ -185,74 +185,74 @@ class UniExecute :public Execute {
     //dtype(*derivate)(const dtype&, const dtype&);  // derivation function of activation function
     bool bTrain;
 
-  public:
-    inline void  forward() {
+public:
+    void  forward() {
         int count = batch.size();
-		device.malloc(x, Shape({inDim, count}));
-		device.malloc(b, Shape({outDim, count}));
-		device.malloc(ty, Shape({outDim, count}));
-		device.malloc(y, Shape({outDim, count}));
+        device.malloc(x, Shape({inDim, count}));
+        device.malloc(b, Shape({outDim, count}));
+        device.malloc(ty, Shape({outDim, count}));
+        device.malloc(y, Shape({outDim, count}));
         //x.init(inDim, count);
         //b.init(outDim, count);
         //ty.init(outDim, count);
         //y.init(outDim, count);
 
 
-		vector<LDG::PTensor> vec_x;
-		vector<LDG::PTensor> vec_b;
+        vector<LDG::PTensor> vec_x;
+        vector<LDG::PTensor> vec_b;
         for (int idx = 0; idx < count; idx++) {
             UniNode* ptr = (UniNode*)batch[idx];
-			vec_x.push_back(&ptr->in->val);
+            vec_x.push_back(&ptr->in->val);
             if (param->bUseB) {
-				vec_b.push_back(&param->b.val);
-			}
-		}
-		//cout << x.shape().to_string() << endl;
-		device.concat(vec_x, x);
-		if (param->bUseB) {
-			device.concat(vec_b, b);
-			//device.show_val(b);
-		}
-
-		/*
-        for (int idx = 0; idx < count; idx++) {
-            UniNode* ptr = (UniNode*)batch[idx];
-            for (int idy = 0; idy < inDim; idy++) {
-                x[idx][idy] = ptr->in->val[idy];
-            }
-            if (param->bUseB) {
-                for (int idy = 0; idy < outDim; idy++) {
-                    b[idx][idy] = param->b.val.v[idy];
-                }
+                vec_b.push_back(&param->b.val);
             }
         }
-		*/
-		//cout << x.shape().size() << endl;
-		//cout << x.shape().to_string() << endl;
-		//device.show_val(x);
-		device.Fmatmul(param->W.val, x, ty);
-		//device.show_val(param->W.val);
-		//cout << param->W.val.shape().to_string() << endl;
+        //cout << x.shape().to_string() << endl;
+        device.concat(vec_x, x);
+        if (param->bUseB) {
+            device.concat(vec_b, b);
+            //device.show_val(b);
+        }
+
+        /*
+           for (int idx = 0; idx < count; idx++) {
+           UniNode* ptr = (UniNode*)batch[idx];
+           for (int idy = 0; idy < inDim; idy++) {
+           x[idx][idy] = ptr->in->val[idy];
+           }
+           if (param->bUseB) {
+           for (int idy = 0; idy < outDim; idy++) {
+           b[idx][idy] = param->b.val.v[idy];
+           }
+           }
+           }
+           */
+        //cout << x.shape().size() << endl;
+        //cout << x.shape().to_string() << endl;
+        //device.show_val(x);
+        device.Fmatmul(param->W.val, x, ty);
+        //device.show_val(param->W.val);
+        //cout << param->W.val.shape().to_string() << endl;
         //ty.mat() = param->W.val.mat() * x.mat();
 
         if (param->bUseB) {
-			device.Fadd(ty, b, ty);
+            device.Fadd(ty, b, ty);
             //ty.vec() = ty.vec() + b.vec();
         }
 
         //y.vec() = ty.vec().unaryExpr(ptr_fun(activate));
-		device.unaryExp(ty, y, &device, activate);
+        device.unaryExp(ty, y, &device, activate);
 
-		vector<LDG::PTensor> vec_val;
+        vector<LDG::PTensor> vec_val;
         for (int idx = 0; idx < count; idx++) {
             UniNode* ptr = (UniNode*)batch[idx];
-			vec_val.push_back(&ptr->val);
-		}
-		device.unconcat(y, vec_val);
+            vec_val.push_back(&ptr->val);
+        }
+        device.unconcat(y, vec_val);
         //for (int idx = 0; idx < count; idx++) {
-            //UniNode* ptr = (UniNode*)batch[idx];
-			//device.show_val(ptr->val);
-		//}
+        //UniNode* ptr = (UniNode*)batch[idx];
+        //device.show_val(ptr->val);
+        //}
 
         for (int idx = 0; idx < count; idx++) {
             UniNode* ptr = (UniNode*)batch[idx];

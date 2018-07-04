@@ -15,9 +15,9 @@
 
 //#include "MyTensor.h"
 #include "LDG_Tensor.h"
-#include "cuda/cuda_impl.h"
+#include "cpu/cpu_impl.h"
 
-CudaDevice device;
+CpuDevice device;
 
 class Execute;
 
