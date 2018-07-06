@@ -10,7 +10,7 @@ public:
     void malloc(LDG::Tensor &t, const Shape &shape) {
         t.device_type = DeviceType::CPU;
         t.shape_ = shape;
-        t.v = new dtype[sizeof(dtype) * shape.size()];
+        t.v = new dtype[shape.size()];
     }
 
     void set(LDG::Tensor &t, dtype val) {
@@ -62,7 +62,7 @@ public:
 
     //git_col
     void get_row(const LDG::Tensor& x, int col, LDG::Tensor& r) {
-        assert(col < x.col() && x.row() == r.row() && r.shape().size() == 1);
+        assert(col < x.col() && x.row() == r.row());
         for (int i = 0; i < r.row(); ++i) {
             at(r, i) = at(x, col, i);
         }
@@ -72,6 +72,7 @@ public:
             float upper) {
         t.device_type = DeviceType::CPU;
         t.shape_ = shape;
+        t.v = new dtype[shape.size()];
         int size = shape.size();
         dtype min = lower, max = upper;
         for (int i = 0; i < size; i++) {
@@ -259,19 +260,19 @@ public:
     }
 
     void show_val(const LDG::Tensor &t) {
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < t.shape().size(); i++) {
             std::cout << t.v[i] << " ,";
         }
         std::cout << endl;
     }
 
     void unaryExp(const LDG::Tensor& x, LDG::Tensor& r, 
-            Device *dev, void (Device::*f)(const LDG::Tensor&, LDG::Tensor& )) {
+            CpuDevice *dev, void (CpuDevice::*f)(const LDG::Tensor&, LDG::Tensor& )) {
         (dev->*f)(x, r);
     }
 
     void binaryExp(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r, 
-            Device *dev, void (Device::*f)(const LDG::Tensor&,
+            CpuDevice *dev, void (CpuDevice::*f)(const LDG::Tensor&,
                 const LDG::Tensor&,
                 LDG::Tensor& )) {
         (dev->*f)(x, y, r);
@@ -281,9 +282,9 @@ private:
     typedef Eigen::TensorMap<Eigen::Tensor<dtype, 1>> Vec;
     typedef Eigen::Map<Matrix<dtype, Dynamic, Dynamic, ColMajor>> Mat;
 
-    dtype &at(const LDG::Tensor &x, int col_i) {
-        assert(x.shape().dims().size() == 1 && col_i < x.col());
-        return x.v[col_i];
+    dtype &at(const LDG::Tensor &x, int row_i) {
+        assert(row_i < x.row());
+        return x.v[row_i];
     }
 
     dtype &at(const LDG::Tensor &x, int col_i, int row_i) {

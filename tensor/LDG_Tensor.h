@@ -1,8 +1,8 @@
 #ifndef LDG_TENSOR
 #define LDG_TENSOR
 
-#include <cuda.h>
-#include <cuda_runtime.h>
+//#include <cuda.h>
+//#include <cuda_runtime.h>
 
 #include "MyLib.h"
 #include "Shape.h"
@@ -17,10 +17,10 @@ public:
     Tensor(const Shape& shape) : shape_(shape), v(NULL) {}
 
     ~Tensor() {
-        if(device_type == CUDA)
-            cudaFree(v);
-        if(device_type == CPU)
-            delete v;
+        if(device_type == CUDA) {}
+            //cudaFree(v);
+        else if(device_type == CPU)
+            delete []v;
     }
 
     /**
