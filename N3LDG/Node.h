@@ -84,9 +84,9 @@ class Node {
         //val.init(dim);
         //loss.init(dim);
         //drop_mask.init(dim);
-		device.malloc(val, Shape({dim, 1}));
-		device.malloc(loss, Shape({dim, 1}));
-		device.malloc(drop_mask, Shape({dim, 1}));
+		device.init(val, Shape({dim, 1}));
+		device.init(loss, Shape({dim, 1}));
+		device.init(drop_mask, Shape({dim, 1}));
         if (dropout > 0 && dropout <= 1) {
             drop_value = dropout;
         } else {

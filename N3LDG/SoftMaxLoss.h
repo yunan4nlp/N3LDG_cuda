@@ -10,6 +10,7 @@ class SoftMaxLoss {
   public:
     inline dtype loss(PNode x, const vector<dtype> &answer, Metric& eval, int batchsize = 1) {
         int nDim = x->val.shape().dims()[0];
+		//device.show_val(x->val);
         int labelsize = answer.size();
         if (labelsize != nDim) {
             std::cerr << "softmax_loss error: dim size invalid" << std::endl;

@@ -16,9 +16,11 @@
 #include <sstream>
 #include <unordered_map>
 #include <unordered_set>
+#include <float.h>
 
 #include "NRMat.h"
 #include "Eigen/Dense"
+
 
 using namespace nr;
 using namespace std;
@@ -26,15 +28,18 @@ using namespace Eigen;
 
 #if USE_FLOAT
 typedef float dtype;
+#define NEGATIVE_INFINITY FLT_MIN
 //typedef Eigen::TensorMap<Eigen::Tensor<float, 1>>  Vec;
 //typedef Eigen::Map<MatrixXf> Mat;
 #else
 typedef double dtype;
+#define NEGATIVE_INFINITY DBL_MIN
 //typedef Eigen::TensorMap<Eigen::Tensor<double, 1>>  Vec;
 //typedef Eigen::Map<MatrixXd> Mat;
 #endif
 
 typedef long long blong;
+
 
 const static dtype minlogvalue = -1000;
 const static dtype d_zero = 0.0;

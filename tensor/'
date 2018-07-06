@@ -11,15 +11,11 @@
 class CudaDevice : public Device {
 	private:
 		cublasHandle_t handle;
-
-	public:
-
 	public:
 		CudaDevice() {
 			Device::device_type = CUDA;
 			cublasCreate(&handle);
 		}
-
 
 	public:
 		void show_val(const LDG::Tensor &t) {
@@ -402,31 +398,9 @@ class CudaDevice : public Device {
 				std::cout << "error, transpose dim is not match" << std::endl;
 		}
 
-		void FSumPooling(const LDG::Tensor& x, LDG::Tensor& y) {
-			int dim = 1;
-			const int n = x.shape()[dim];
-			const int r = y.shape().size();
-			const int s = y.shape().lower_volume(dim);
-			Fsumpooling_impl(x.v, y.v, n, r, s);
+		void FAvgPooling(const vector<LDG::PTensor>& vec_x, LDG::Tensor& r) {
 		}
 
-
-		void FMaxPooling(const LDG::Tensor& x, LDG::Tensor& y) {
-			int dim = 1;
-			const int n = x.shape()[dim];
-			const int r = y.shape().size();
-			const int s = y.shape().lower_volume(dim);
-			Fmaxpooling_impl(x.v, y.v, n, r, s);
-		}
-
-		void DMaxPooling(const LDG::Tensor& x, const LDG::Tensor& y, 
-				const LDG::Tensor& gy, LDG::Tensor& gx) {
-			int dim = 1;
-			const int n = x.shape()[dim];
-			const int r = y.shape().size();
-			const int s = y.shape().lower_volume(dim);
-			Dmaxpooling_impl(x.v, y.v, gy.v, gx.v, n, r, s);
-		}
 };
 
 #endif

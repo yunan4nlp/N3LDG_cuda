@@ -27,9 +27,10 @@ class SparseParam : public BaseParam {
         //val.init(outDim, inDim);
         dtype bound = sqrt(3.0 / (outDim));
 		device.random_uniform(val, Shape({outDim, inDim}), -bound, bound);
-		device.malloc(grad, Shape({outDim, inDim}));
-		device.malloc(aux_square, Shape({outDim, inDim}));
-		device.malloc(aux_mean, Shape({outDim, inDim}));
+		device.init(grad, Shape({outDim, inDim}));
+		device.init(aux_square, Shape({outDim, inDim}));
+		device.init(aux_mean, Shape({outDim, inDim}));
+
         //val.random(bound);
         //grad.init(outDim, inDim);
         //aux_square.init(outDim, inDim);
@@ -44,7 +45,7 @@ class SparseParam : public BaseParam {
         int inDim = indexers.size();
         for (int index = 0; index < inDim; index++) {
             if (!indexers[index]) continue;
-			device.set_row(grad, index, 0);
+			device.set_col(grad, index, 0);
 			/*
             for (int idx = 0; idx < grad.row; idx++) {
                 grad[index][idx] = 0;
@@ -223,7 +224,7 @@ class SparseParam : public BaseParam {
         }
 		*/
 
-		device.get_row(val, featId, out);
+		device.get_col(val, featId, out);
     }
 
     //inline void value(const vector<int>& featIds, Tensor1D& out) {
@@ -251,8 +252,7 @@ class SparseParam : public BaseParam {
             std::cout << "warning: loss dim not equal lookup param dim." << std::endl;
         }
         indexers[featId] = true;
-		device.show_val(loss);
-
+		device.Fadd_col(grad, loss, featId);
 		/*
         if (loss.dim != val.row) {
             std::cout << "warning: loss dim not equal lookup param dim." << std::endl;

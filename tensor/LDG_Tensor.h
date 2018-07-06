@@ -27,7 +27,7 @@ namespace LDG {
 		* Returns the shape of the Tensor.
 		* @return Shape of the Tensor.
 		*/
-		Shape shape() const {
+		const Shape& shape() const {
 			return shape_;
 		}
 

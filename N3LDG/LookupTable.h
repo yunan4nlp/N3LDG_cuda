@@ -267,7 +267,6 @@ class LookupNode : public Node {
     void compute() {
         if (xid >= 0) {
             param->E.value(xid, val);
-			//device.show_val(param->E.val);
 			//cout << "shape:    " << param->E.val.shape().to_string() << endl;
 			//cout << "id:   "<< xid << endl;
         } else {

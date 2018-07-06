@@ -31,8 +31,15 @@ void unconcat_impl(const dtype *src, dtype* dst, int offset, int dim);
 
 void Ftranspose_impl(const dtype* x, dtype* r, int dim0, int dim1, int size);
 
-void set_col_impl(dtype* x, int dim0, int dim1, int col, int size, dtype val);
 
-void set_row_impl(dtype* x, int dim0, int row, int size, dtype val);
+void set_col_impl(dtype* x, int dim0, int col, int size, dtype val);
 
-void get_row_impl(const dtype* x, dtype* r, int dim0, int row, int size);
+void get_col_impl(const dtype* x, dtype* r, int dim0, int col, int size);
+
+void Fadd_col_impl(dtype* x, const dtype* y, int col, int dim0, int size);
+
+void Fsumpooling_impl(const dtype* x, dtype* y, int n, int r, int s);
+
+void Fmaxpooling_impl(const dtype* x, dtype* y, int n, int r, int s);
+
+void Dmaxpooling_impl(const dtype* x, const dtype* y, const dtype* gy, dtype* gx, int n, int r, int s);
