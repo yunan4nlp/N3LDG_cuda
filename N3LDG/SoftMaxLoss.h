@@ -12,8 +12,10 @@ class SoftMaxLoss {
         int nDim = x->val.shape().dims()[0];
         int labelsize = answer.size();
         if (labelsize != nDim) {
+            std::cerr << "labelsize:" << labelsize << " nDim:" << nDim <<
+                std::endl;
             std::cerr << "softmax_loss error: dim size invalid" << std::endl;
-            return -1.0;
+            abort();
         }
 		LDG::Tensor cpu_x;
 		cpu_x.device_type == CPU;	

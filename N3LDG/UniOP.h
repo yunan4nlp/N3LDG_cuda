@@ -322,7 +322,7 @@ public:
 		LDG::Tensor lxg;
 		device.malloc(lxg, lx.shape());
 		device.Fmatmul(param->W.val, lty, lxg, true, false);
-		device.show_val(param->W.val);
+		//device.show_val(param->W.val);
 		device.Fadd(lx, lxg, lx);
         //lx.mat() += param->W.val.mat().transpose() * lty.mat();
 

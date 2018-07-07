@@ -44,7 +44,7 @@ class SparseParam : public BaseParam {
         int inDim = indexers.size();
         for (int index = 0; index < inDim; index++) {
             if (!indexers[index]) continue;
-			device.set_row(grad, index, 0);
+			device.set_col(grad, index, 0);
 			/*
             for (int idx = 0; idx < grad.row; idx++) {
                 grad[index][idx] = 0;
@@ -251,7 +251,7 @@ class SparseParam : public BaseParam {
             std::cout << "warning: loss dim not equal lookup param dim." << std::endl;
         }
         indexers[featId] = true;
-		device.show_val(loss);
+		//device.show_val(loss);
 
 		/*
         if (loss.dim != val.row) {

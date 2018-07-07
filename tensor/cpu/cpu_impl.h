@@ -28,7 +28,6 @@ public:
     }
 
     void set(LDG::Tensor &t, const dtype* host_data, int h_size) {
-        abort();
     }
 
     void zero(LDG::Tensor &t) {
@@ -45,7 +44,7 @@ public:
 
     void set_row(LDG::Tensor &t, int row, dtype val) {
         for (int i = 0; i < t.col(); ++i) {
-            at(t, row, i) = val;
+            at(t, i, row) = val;
         }
     }
 
@@ -256,7 +255,6 @@ public:
     }
 
     void to_cpu(const LDG::Tensor &gpu_tensor, LDG::Tensor &cpu_tensor) {
-        abort();
     }
 
     void show_val(const LDG::Tensor &t) {
