@@ -24,6 +24,8 @@ using namespace nr;
 using namespace std;
 using namespace Eigen;
 
+#define USE_FLOAT 0
+
 #if USE_FLOAT
 typedef float dtype;
 //typedef Eigen::TensorMap<Eigen::Tensor<float, 1>>  Vec;

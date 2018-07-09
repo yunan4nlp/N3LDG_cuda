@@ -28,6 +28,10 @@ public:
     }
 
     void set(LDG::Tensor &t, const dtype* host_data, int h_size) {
+        assert(t.shape().size() == h_size);
+        for (int i = 0; i < h_size; ++i) {
+            t.v[i] = host_data[i];
+        }
     }
 
     void zero(LDG::Tensor &t) {
@@ -255,6 +259,11 @@ public:
     }
 
     void to_cpu(const LDG::Tensor &gpu_tensor, LDG::Tensor &cpu_tensor) {
+        assert(gpu_tensor.shape().size() == cpu_tensor.shape().size());
+        cpu_tensor.shape_ = gpu_tensor.shape_;
+        for (int i = 0; i < gpu_tensor.shape().size(); ++i) {
+            cpu_tensor.v[i] = gpu_tensor.v[i];
+        }
     }
 
     void show_val(const LDG::Tensor &t) {
