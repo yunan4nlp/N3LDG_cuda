@@ -27,12 +27,9 @@ class Param : public BaseParam {
         //aux_square.init(outDim, inDim);
         //aux_mean.init(outDim, inDim);
 		//device.malloc(val, Shape({outDim, inDim}));
-		device.malloc(grad, Shape({outDim, inDim}));
-		device.malloc(aux_square, Shape({outDim, inDim}));
-		device.malloc(aux_mean, Shape({outDim, inDim}));
-		device.zero(grad);
-		device.zero(aux_square);
-		device.zero(aux_mean);
+		device.init(grad, Shape({outDim, inDim}));
+		device.init(aux_square, Shape({outDim, inDim}));
+		device.init(aux_mean, Shape({outDim, inDim}));
 
         dtype bound = sqrt(6.0 / (outDim + inDim + 1));
         //val.random(bound);
@@ -58,30 +55,30 @@ class Param : public BaseParam {
     inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) {
         if (outDim() > 1 && inDim() > 1) {
 			LDG::Tensor v_r;
-			device.malloc(v_r, val.shape()); 
+			device.init(v_r, val.shape()); 
 			device.Fmultiply_scalar(val, reg, v_r);
 			device.Fadd(grad, v_r, grad);
 			//grad.vec() = grad.vec() + val.vec() * reg;
 		}
 		LDG::Tensor grad_square;
-		device.malloc(grad_square, grad.shape());
+		device.init(grad_square, grad.shape());
 		device.Fsquare(grad, grad_square);
 		device.Fadd(aux_square, grad_square, aux_square);
         //aux_square.vec() = aux_square.vec() + grad.vec().square();
 
 		LDG::Tensor aux_eps;
-		device.malloc(aux_eps, aux_square.shape());
+		device.init(aux_eps, aux_square.shape());
 		device.Fadd_scalar(aux_square, eps, aux_eps);
 		LDG::Tensor aux_sqrt;
-		device.malloc(aux_sqrt, aux_square.shape());
+		device.init(aux_sqrt, aux_square.shape());
 		device.Fsqrt(aux_eps, aux_sqrt);
 		
 		LDG::Tensor grad_alpha;
-		device.malloc(grad_alpha, grad.shape());
+		device.init(grad_alpha, grad.shape());
 		device.Fmultiply_scalar(grad, alpha, grad_alpha);
 
 		LDG::Tensor grad_aux;
-		device.malloc(grad_aux, grad.shape());
+		device.init(grad_aux, grad.shape());
 		device.Fdivide(grad_alpha, aux_sqrt, grad_aux);
 		
 

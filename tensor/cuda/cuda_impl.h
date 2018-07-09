@@ -5,13 +5,21 @@
 #include "MyLib.h"
 #include "kernel.cuh"
 #include <iostream>
+#include <iomanip>
 
 
 class CudaDevice : public Device {
+	private:
+		cublasHandle_t handle;
+
+	public:
+
 	public:
 		CudaDevice() {
 			Device::device_type = CUDA;
+			cublasCreate(&handle);
 		}
+
 
 	public:
 		void show_val(const LDG::Tensor &t) {
@@ -21,9 +29,14 @@ class CudaDevice : public Device {
 			cudaMemcpy(host_data, t.v, memsize, cudaMemcpyDeviceToHost);
 
 			for (int i = 0; i < size; i++) {
-				std::cout << host_data[i] << " ,";
+				std::cout << setprecision(10) << host_data[i] << " ,";
 			}
 			std::cout << endl;
+		}
+
+		void init(LDG::Tensor &t, const Shape &shape) {
+			malloc(t, shape);
+			zero(t);
 		}
 
 		void copy_data(const LDG::Tensor &src, LDG::Tensor& dst) {
@@ -48,22 +61,11 @@ class CudaDevice : public Device {
 		void set_col(LDG::Tensor &t, int col, dtype val) {
 			int dim0 = t.shape().dims()[0];
 			int dim1 = t.shape().dims()[1];
-			if(col < dim0) {
-				set_col_impl(t.v, dim0, dim1, col, t.shape().size(), val);
+			if(col < dim1) {
+				set_col_impl(t.v, dim0, col, t.shape().size(), val);
 			} else
-				std::cout << "set col beyond dim0 " << endl;
+				std::cout << "set col beyond dim1 " << endl;
 		}
-
-		void set_row(LDG::Tensor &t, int row, dtype val) {
-			int dim0 = t.shape().dims()[0];
-			int dim1 = t.shape().dims()[1];
-			if(row < dim1) {
-				set_row_impl(t.v, dim0, row, t.shape().size(), val);
-			} else
-				std::cout << "set row beyond dim1 " << endl;
-		}
-
-
 
 		void malloc(LDG::Tensor &t, const Shape &shape) {
 			t.device_type = CUDA;
@@ -74,14 +76,14 @@ class CudaDevice : public Device {
 		}
 
 		void zero(LDG::Tensor &t) {
-			int size = t.shape().size();
-			dtype zero_host[size] = {0};
-			set(t, zero_host, size);
+			set(t, 0);
 		}
 
 		void set(LDG::Tensor &t, dtype val) {
 			int size = t.shape().size();
-			dtype zero_host[size] = {val};
+			dtype zero_host[size];
+			for (int idx = 0; idx < size; idx++)
+				zero_host[idx] = val;
 			set(t, zero_host, size);
 		}
 
@@ -97,16 +99,16 @@ class CudaDevice : public Device {
 				cout << "set error dim is not match" << endl;
 		}
 
-		void get_row(const LDG::Tensor& x, int row, LDG::Tensor& r) {
+		void get_col(const LDG::Tensor& x, int col, LDG::Tensor& r) {
 			int dim0 = x.shape().dims()[0];
 			int dim1 = x.shape().dims()[1];
 			if(dim0 == r.shape().dims()[0]) {
-				if(row < dim1) {
-					get_row_impl(x.v, r.v, dim0, row, x.shape().size());
+				if(col < dim1) {
+					get_col_impl(x.v, r.v, dim0, col, x.shape().size());
 				} else
-					cout << "get row, row beyond" << endl;
+					cout << "get col, col beyond" << endl;
 			} else
-				cout << "get row dims are not matched" << endl;
+				cout << "get col dims are not matched" << endl;
 		}
 
 
@@ -226,6 +228,25 @@ class CudaDevice : public Device {
 			Fmultiply_scalar_impl(x.v, y, r.v, x_size);
 		}
 
+		void Fadd_col(LDG::Tensor& x, const LDG::Tensor& y_col, int col) {
+			auto x_dims = x.shape().dims();
+			auto y_dims = y_col.shape().dims();
+			int size = x.shape().size();
+			int dim0 = x_dims[0];
+			int dim1 = x_dims[1];
+			if(col >= dim1) {
+				cout << "col index beyond x dim" << endl;	
+				return;
+			}
+
+			if (y_dims[1] != 1) {
+				cout << "y is not a vector" << endl;
+				return;
+			}
+					
+			Fadd_col_impl(x.v, y_col.v, col, dim0, size);
+		}
+
 		void Fdivide(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r) {
 			int x_size = x.shape().size();
 			int y_size = y.shape().size();
@@ -236,55 +257,30 @@ class CudaDevice : public Device {
 				std::cout << "error, divide dim is not match" << std::endl;
 		}
 
-		void Fmatmul(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r, 
-				bool ta = false, bool tb = false) {
-			auto x_dims = x.shape().dims();
-			auto y_dims = y.shape().dims();
-			auto r_dims = r.shape().dims();
+		void Fmatmul(const LDG::Tensor &x, const LDG::Tensor &y, LDG::Tensor &r,
+				bool tx = false, bool ty = false) {
+			int m = tx ? x.shape().dims()[1] : x.shape().dims()[0];
+			int n = tx ?  x.shape().dims()[0] : x.shape().dims()[1];
+			int k = ty ? y.shape().dims()[0] : y.shape().dims()[1];
 
-			int m = x_dims[0];
-			int k = x_dims[1];
-			int n = y_dims[1];
+			dtype alpha = 1;
+			dtype beta =  0;
 
-			cublasOperation_t transa = ta ? CUBLAS_OP_T : CUBLAS_OP_N;
-			int lda = ta ? n : m;
-			cublasOperation_t transb = tb ? CUBLAS_OP_T : CUBLAS_OP_N;
-			int ldb = tb ? k : n;
-			int ldc = m;
+			cublasOperation_t transx = tx ? CUBLAS_OP_T : CUBLAS_OP_N;
+			int ldx = tx ? n : m;
 
-			dtype alpha=1.0;
-			dtype beta=0.0;
-			if(x.shape().is_matrix() && y.shape().is_matrix() && r.shape().is_matrix()) {
-				cublasHandle_t handle;  
-				cublasCreate(&handle);  	
-				//if (m == r_dims[0] && n == r_dims[1] && k == y_dims[0]) {
+			cublasOperation_t transy = ty ? CUBLAS_OP_T : CUBLAS_OP_N;
+			int ldy = ty ? k : n;
+
 #if USE_FLOAT
-					cublasSgemm(handle, 
-							transa, transb,
-							m,n,k,
-							&alpha,
-							x.v, lda,
-							y.v, ldb,
-							&beta,
-							r.v, ldc);
-#else
-					cublasDgemm(handle, 
-							transa, transb,
-							m,n,k,
-							&alpha,
-							x.v, lda,
-							y.v, ldb,
-							&beta,
-							r.v, ldc);
-#endif
-				//} else {
-					//cout << "matmul dim is not matched." << endl;
-					//cout << "matmul dim x:" << x.shape().to_string() << endl;
-					//cout << "matmul dim y:" << y.shape().to_string() << endl;
-					//cout << "matmul dim r:" << r.shape().to_string() << endl;
-				//}
-			}
+			(cublasSgemm(handle, transx, transy, m, k, n,
+						 &alpha, x.v, ldx, y.v, ldy, &beta, r.v, m));
+#else                   
+			(cublasDgemm(handle, transx, transy, m, k, n,
+						 &alpha, x.v, ldx, y.v, ldy, &beta, r.v, m));
+#endif                  
 		}
+
 
 		void Dadd(const LDG::Tensor& x, const LDG::Tensor& y, const LDG::Tensor& r,
 				const LDG::Tensor& gr, LDG::Tensor& gx, LDG::Tensor& gy) {
@@ -406,14 +402,30 @@ class CudaDevice : public Device {
 				std::cout << "error, transpose dim is not match" << std::endl;
 		}
 
-		void unaryExp(const LDG::Tensor& x, LDG::Tensor& r, 
-				CudaDevice *dev, void (CudaDevice::*f)(const LDG::Tensor&, LDG::Tensor& )) {
-			(dev->*f)(x, r);
+		void FSumPooling(const LDG::Tensor& x, LDG::Tensor& y) {
+			int dim = 1;
+			const int n = x.shape()[dim];
+			const int r = y.shape().size();
+			const int s = y.shape().lower_volume(dim);
+			Fsumpooling_impl(x.v, y.v, n, r, s);
 		}
 
-		void binaryExp(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r, 
-				CudaDevice *dev, void (CudaDevice::*f)(const LDG::Tensor&, const LDG::Tensor&, LDG::Tensor& )) {
-			(dev->*f)(x, y, r);
+
+		void FMaxPooling(const LDG::Tensor& x, LDG::Tensor& y) {
+			int dim = 1;
+			const int n = x.shape()[dim];
+			const int r = y.shape().size();
+			const int s = y.shape().lower_volume(dim);
+			Fmaxpooling_impl(x.v, y.v, n, r, s);
+		}
+
+		void DMaxPooling(const LDG::Tensor& x, const LDG::Tensor& y, 
+				const LDG::Tensor& gy, LDG::Tensor& gx) {
+			int dim = 1;
+			const int n = x.shape()[dim];
+			const int r = y.shape().size();
+			const int s = y.shape().lower_volume(dim);
+			Dmaxpooling_impl(x.v, y.v, gy.v, gx.v, n, r, s);
 		}
 };
 

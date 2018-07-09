@@ -46,6 +46,7 @@ class CheckGrad {
             //orginValue = _params[i]->val[idx][idy];
             orginValue = cpu_val.v[idx * row + idy];
 
+
             //_params[i]->val[idx][idy] = orginValue + 0.001;
             cpu_val.v[idx * row + idy] = orginValue + 0.001;
 			device.set(_params[i]->val, cpu_val.v, size);
@@ -80,6 +81,7 @@ class CheckGrad {
             printf("mock grad = %.18f, computed grad = %.18f\n", mockGrad, computeGrad);
 
             cpu_val.v[idx * row + idy] = orginValue;
+			device.set(_params[i]->val, cpu_val.v, size);
         }
     }
 

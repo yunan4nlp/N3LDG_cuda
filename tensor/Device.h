@@ -9,15 +9,15 @@ class Device {
 public:
 	int device_type;
 public:
+	virtual void init(LDG::Tensor &t, const Shape &shape) = 0;
 	virtual void malloc(LDG::Tensor &t, const Shape &shape) = 0;
 	virtual void set(LDG::Tensor &t, dtype val) = 0;
 	virtual void set(LDG::Tensor &t, const vector<dtype>& vec_val) = 0;
 	virtual void set(LDG::Tensor &t, const dtype* host_data, int h_size) = 0;
 	virtual void zero(LDG::Tensor &t) = 0;
 	virtual void set_col(LDG::Tensor &t, int col, dtype val) = 0;
-	virtual void set_row(LDG::Tensor &t, int row, dtype val) = 0;
 	virtual void copy_data(const LDG::Tensor &src, LDG::Tensor& dst) = 0;
-	virtual void get_row(const LDG::Tensor& x, int row, LDG::Tensor& r) = 0;
+	virtual void get_col(const LDG::Tensor& x, int col, LDG::Tensor& r) = 0;
 
 	virtual void random_uniform(LDG::Tensor &t, const Shape &shape, float lower, float upper) = 0;
 	virtual void random_bernoulli(LDG::Tensor &t, const Shape &shape, float p) = 0;
@@ -47,11 +47,15 @@ public:
 	virtual void Fsubtract(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r) = 0;
 	virtual void Fmultiply(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r) = 0;
 	virtual void Fdivide(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r) = 0;
-	virtual void Fmatmul(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r, bool ta=false, bool tb=false) = 0;
+
+	virtual void Fmatmul(const LDG::Tensor &x, const LDG::Tensor &y, LDG::Tensor &r, bool tx = false, bool ty = false) = 0;
 
 
 	virtual void Fadd_scalar(const LDG::Tensor& x, const dtype y, LDG::Tensor& r) = 0;
 	virtual void Fmultiply_scalar(const LDG::Tensor& x, const dtype y, LDG::Tensor& r) = 0;
+
+
+	virtual void Fadd_col(LDG::Tensor& x, const LDG::Tensor& y_col, int col) = 0;
 
 	virtual void Dadd(const LDG::Tensor& x, const LDG::Tensor& y, const LDG::Tensor& r,
 		const LDG::Tensor& gr, LDG::Tensor& gx, LDG::Tensor& gy) = 0;
@@ -90,6 +94,22 @@ public:
 	virtual void unconcat(const LDG::Tensor& r, vector<LDG::PTensor>& vec_x) = 0;
 
 	virtual void Ftranspose(const LDG::Tensor& x, LDG::Tensor& r) = 0;
+
+	virtual void FSumPooling(const LDG::Tensor &x, LDG::Tensor &y) = 0;
+
+	virtual void FMaxPooling(const LDG::Tensor &x, LDG::Tensor &y) = 0;
+
+	virtual void DMaxPooling(const LDG::Tensor& x, const LDG::Tensor& y, const LDG::Tensor& gy, LDG::Tensor& gx) = 0;
+
+	void unaryExp(const LDG::Tensor& x, LDG::Tensor& r, 
+			Device *dev, void (Device::*f)(const LDG::Tensor&, LDG::Tensor& )) {
+		(dev->*f)(x, r);
+	}
+
+	void binaryExp(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r, 
+			Device *dev, void (Device::*f)(const LDG::Tensor&, const LDG::Tensor&, LDG::Tensor& )) {
+		(dev->*f)(x, y, r);
+	}
 };
 
 #endif // ! Device
