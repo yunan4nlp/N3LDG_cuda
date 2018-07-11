@@ -29,7 +29,7 @@ public:
 		opts.labelSize = labelAlpha.size();
 		hidden_linear.initial(opts.labelSize, opts.wordDim, true);
 		opts.inputSize = opts.hiddenSize * 3;
-		olayer_linear.initial(opts.labelSize, opts.inputSize, false);
+		olayer_linear.initial(opts.labelSize, opts.wordDim, true);
 		return true;
 	}
 

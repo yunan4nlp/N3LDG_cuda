@@ -9,7 +9,7 @@
 #define SPARSEPARAM_H_
 
 #include "BaseParam.h"
-#include "cuda/cuda_impl.h"
+#include "cpu/cpu_impl.h"
 
 // Notice: aux_square is an aux_squareiliary variable to help parameter updating
 // The in-out dimension definiation is different with dense parameters.

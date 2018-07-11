@@ -10,7 +10,7 @@
 
 #include "Eigen/Dense"
 #include "BaseParam.h"
-#include "cuda/cuda_impl.h"
+#include "cpu/cpu_impl.h"
 
 
 // Notice: aux is an auxiliary variable to help parameter updating
