@@ -18,6 +18,7 @@ public:
 	virtual void set_col(LDG::Tensor &t, int col, dtype val) = 0;
 	virtual void copy_data(const LDG::Tensor &src, LDG::Tensor& dst) = 0;
 	virtual void get_col(const LDG::Tensor& x, int col, LDG::Tensor& r) = 0;
+        virtual dtype &at(const LDG::Tensor &x, int col_i, int row_i) {}
 
 	virtual void random_uniform(LDG::Tensor &t, const Shape &shape, float lower, float upper) = 0;
 	virtual void random_bernoulli(LDG::Tensor &t, const Shape &shape, float p) = 0;
@@ -97,10 +98,15 @@ public:
 
 	virtual void FSumPooling(const LDG::Tensor &x, LDG::Tensor &y) = 0;
 
-	virtual void FMaxPooling(const LDG::Tensor &x, LDG::Tensor &y) = 0;
+	virtual void FAvgPooling(const LDG::Tensor &x, LDG::Tensor &y) = 0;
 
-	virtual void DMaxPooling(const LDG::Tensor& x, const LDG::Tensor& y, const LDG::Tensor& gy, LDG::Tensor& gx) = 0;
+	virtual void FMaxPooling(const LDG::Tensor &x, LDG::Tensor &y, int *index) = 0;
 
+        virtual void FMinPooling(const LDG::Tensor& x, LDG::Tensor& y, int *index) = 0;
+
+	virtual void DMaxPooling(const LDG::Tensor& x, const LDG::Tensor& y, const LDG::Tensor& gy, LDG::Tensor& gx, int *index) = 0;
+
+	virtual void DMinPooling(const LDG::Tensor& x, const LDG::Tensor& y, const LDG::Tensor& gy, LDG::Tensor& gx, int *index) = 0;
 	void unaryExp(const LDG::Tensor& x, LDG::Tensor& r, 
 			Device *dev, void (Device::*f)(const LDG::Tensor&, LDG::Tensor& )) {
 		(dev->*f)(x, r);

@@ -214,10 +214,13 @@ public:
                 vec_b.push_back(&param->b.val);
             }
         }
-		*/
 		//cout << x.shape().size() << endl;
 		//cout << x.shape().to_string() << endl;
 		//device.show_val(x);
+        device.concat(vec_x, x);
+        if (param->bUseB) {
+            device.concat(vec_b, b);
+        }
 		device.Fmatmul(param->W.val, x, ty);
 		//cout << param->W.val.shape().to_string() << endl;
         //ty.mat() = param->W.val.mat() * x.mat();
@@ -236,14 +239,15 @@ public:
             vec_val.push_back(&ptr->val);
         }
         device.unconcat(y, vec_val);
-        //for (int idx = 0; idx < count; idx++) {
-        //UniNode* ptr = (UniNode*)batch[idx];
-        //device.show_val(ptr->val);
-        //}
-
+        for (int idx = 0; idx < count; idx++) {
+          UniNode* ptr = (UniNode*)batch[idx];
+        }
         for (int idx = 0; idx < count; idx++) {
             UniNode* ptr = (UniNode*)batch[idx];
             ptr->forward_drop(bTrain);
+        }
+        for (int idx = 0; idx < count; idx++) {
+          UniNode* ptr = (UniNode*)batch[idx];
         }
     }
 

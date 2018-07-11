@@ -764,5 +764,20 @@ inline int cmpStringIntPairByValue(const pair<string, int> &x, const pair<string
     return x.second > y.second;
 }
 
+template <typename T, typename S>
+std::vector<S *> toPointers(std::vector<T> &v, int size) {
+    std::vector<S *> pointers;
+    for (int i = 0; i < size; ++i) {
+        pointers.push_back(&v.at(i));
+    }
+    return pointers;
+}
+
+
+template <typename T, typename S>
+std::vector<S *> toPointers(std::vector<T> &v) {
+    return toPointers<T, S>(v, v.size());
+}
+
 #endif
 

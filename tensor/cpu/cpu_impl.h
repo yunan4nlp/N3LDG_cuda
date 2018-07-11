@@ -14,36 +14,26 @@ public:
     }
 
     void set(LDG::Tensor &t, dtype val) {
-        for (int i = 0; i < t.shape().size(); ++i) {
-            t.v[i] = val;
-        }
+        to_vec(t).setConstant(val);
     }
 
     void set(LDG::Tensor &t, const vector<dtype>& vec_val) {
         int size = t.shape().size();
         assert(size == vec_val.size());
-        for (int i = 0; i < size; ++i) {
-            t.v[i] = vec_val.at(i);
-        }
+        to_vec(t) = Vec(const_cast<dtype*>(vec_val.data()), size);
     }
 
     void set(LDG::Tensor &t, const dtype* host_data, int h_size) {
         assert(t.shape().size() == h_size);
-        for (int i = 0; i < h_size; ++i) {
-            t.v[i] = host_data[i];
-        }
+        to_vec(t) = Vec(const_cast<dtype*>(host_data), h_size);
     }
 
     void zero(LDG::Tensor &t) {
-        for (int i = 0; i < t.shape().size(); ++i) {
-            t.v[i] = 0.0f;
-        }
+        to_vec(t).setZero();
     }
 
     void set_col(LDG::Tensor &t, int col, dtype val) {
-        for (int i = 0; i < t.row(); ++i) {
-            at(t, col, i) = val;
-        }
+        Vec(&at(t, col, 0), t.row()).setConstant(val);
     }
 
     void set_row(LDG::Tensor &t, int row, dtype val) {
@@ -58,17 +48,12 @@ public:
             abort();
         }
 
-        for (int i = 0; i < src.shape().size(); ++i) {
-            dst.v[i] = src.v[i];
-        }
+        to_vec(dst) = to_vec(src);
     }
 
-    //git_col
-    void get_row(const LDG::Tensor& x, int col, LDG::Tensor& r) {
+    void get_col(const LDG::Tensor& x, int col, LDG::Tensor& r) {
         assert(col < x.col() && x.row() == r.row());
-        for (int i = 0; i < r.row(); ++i) {
-            at(r, i) = at(x, col, i);
-        }
+        to_vec(r) = Vec(x.v, x.row());
     }
 
     void random_uniform(LDG::Tensor &t, const Shape &shape, float lower,
@@ -88,6 +73,7 @@ public:
     void random_log_normal(LDG::Tensor &t, const Shape &shape, float mean, float sd) {}
 
     void Fequal(const LDG::Tensor& x, LDG::Tensor& r) {}
+
     void Ftanh(const LDG::Tensor& x, LDG::Tensor& r) {
         assert(x.shape().size() == r.shape().size());
         to_vec(r) = to_vec(x).tanh();
@@ -169,8 +155,15 @@ public:
         }
     }
 
-    void Fadd_scalar(const LDG::Tensor& x, const dtype y, LDG::Tensor& r) {}
-    void Fmultiply_scalar(const LDG::Tensor& x, const dtype y, LDG::Tensor& r) {}
+    void Fadd_scalar(const LDG::Tensor& x, const dtype y, LDG::Tensor& r) {
+
+    }
+
+    void Fmultiply_scalar(const LDG::Tensor& x, const dtype y, LDG::Tensor& r) {
+      to_vec(r) = y * to_vec(x);
+    }
+
+    void Fadd_col(LDG::Tensor& x, const LDG::Tensor& y_col, int col) {}
 
     void Dadd(const LDG::Tensor& x, const LDG::Tensor& y, const LDG::Tensor& r,
             const LDG::Tensor& gr, LDG::Tensor& gx, LDG::Tensor& gy) {}
@@ -203,7 +196,6 @@ public:
 
     void Fsoftmax(const LDG::Tensor& x, LDG::Tensor& r) {
         int nDim = x.shape().dims()[0];
-        int memsize = nDim * sizeof(dtype);
 
         int optLabel = -1;
         for (int i = 0; i < nDim; ++i) {
@@ -211,19 +203,13 @@ public:
                 optLabel = i;
         }
 
-        std::vector<dtype> scores;
-        scores.resize(nDim);
-
-        dtype sum2 = 0, maxScore = x.v[optLabel];
+        dtype maxScore = x.v[optLabel];
+        to_vec(r) = (to_vec(x) - maxScore).exp();
+        dtype sum2 = 0.0f;
         for (int i = 0; i < nDim; ++i) {
-            scores[i] = -1e10;
-            scores[i] = exp(x.v[i] - maxScore);
-            sum2 += scores[i];
-        } 
-
-        for (int i = 0; i < nDim; ++i) {
-            r.v[i] = scores[i] / sum2;
+            sum2 += r.v[i];
         }
+        to_vec(r) = to_vec(r) / sum2;
     }
 
     void Dsoftmax(const LDG::Tensor& x, const LDG::Tensor& r, const LDG::Tensor& gr,
@@ -233,10 +219,12 @@ public:
         int offset = 0;
         for (const LDG::PTensor &t : vec_x) {
             int size = t->shape().size();
-            assert(offset + size <= t->shape().size());
+            assert(offset + size <= r.shape().size());
             for (int i = 0; i < size; ++i) {
                 r.v[offset + i] = t->v[i];
             }
+
+            offset += size;
         }
     }
 
@@ -244,11 +232,12 @@ public:
         int offset = 0;
         for (LDG::PTensor &t : vec_x) {
             int size = t->shape().size();
-            assert(offset + size <= t->shape().size());
+            assert(offset + size <= r.shape().size());
             for (int i = 0; i < size; ++i) {
-                r.v[offset + i] = t->v[i];
                 t->v[i] = r.v[offset + i];
             }
+
+            offset += size;
         }
     }
 
@@ -258,9 +247,69 @@ public:
         to_mat(r) = to_mat(x).transpose();
     }
 
+    void FSumPooling(const LDG::Tensor& x, LDG::Tensor& y) {
+      int n = x.col();
+      for (int i = 0; i < n; ++i) {
+        to_vec(y) += Vec(&at(x, i, 0), x.row());
+      }
+    }
+
+    virtual void FAvgPooling(const LDG::Tensor &x, LDG::Tensor &y) {
+      int n = x.col();
+      for (int i = 0; i < n; ++i) {
+        to_vec(y) += Vec(&at(x, i, 0), x.row());
+      }
+      to_vec(y) = (1.0f / n) * to_vec(y);
+    }
+
+    void FMaxPooling(const LDG::Tensor& x, LDG::Tensor& y, int *index) {
+      int n = x.col();
+      for (int i = 0; i < x.row(); ++i) {
+          int max_i = 0;
+          float max = at(x, 0, i);
+          for (int j = 1; j < n; ++j) {
+              if (max < at(x, j, i)) {
+                  max_i = j;
+                  max = at(x, j, i);
+              }
+          }
+          index[i] = max_i;
+          y.v[i] = max;
+      }
+    }
+
+    void FMinPooling(const LDG::Tensor& x, LDG::Tensor& y, int *index) {
+      int n = x.col();
+      for (int i = 0; i < x.row(); ++i) {
+          int min_i = 0;
+          float min = at(x, 0, i);
+          for (int j = 1; j < n; ++j) {
+              if (min > at(x, j, i)) {
+                  min_i = j;
+                  min = at(x, j, i);
+              }
+          }
+          index[i] = min_i;
+          y.v[i] = min;
+      }
+    }
+
+    void DMaxPooling(const LDG::Tensor& x, const LDG::Tensor& y, 
+            const LDG::Tensor& gy, LDG::Tensor& gx, int *index) {
+        for (int i = 0; i < gy.row(); ++i) {
+            at(gx, index[i], i) += gy.v[i];
+        }
+    }
+
+    void DMinPooling(const LDG::Tensor& x, const LDG::Tensor& y, 
+            const LDG::Tensor& gy, LDG::Tensor& gx, int *index) {
+        for (int i = 0; i < gy.row(); ++i) {
+            at(gx, index[i], i) += gy.v[i];
+        }
+    }
+
     void to_cpu(const LDG::Tensor &gpu_tensor, LDG::Tensor &cpu_tensor) {
         assert(gpu_tensor.shape().size() == cpu_tensor.shape().size());
-        cpu_tensor.shape_ = gpu_tensor.shape_;
         for (int i = 0; i < gpu_tensor.shape().size(); ++i) {
             cpu_tensor.v[i] = gpu_tensor.v[i];
         }
@@ -271,6 +320,11 @@ public:
             std::cout << t.v[i] << " ,";
         }
         std::cout << endl;
+    }
+
+    void init(LDG::Tensor &t, const Shape &shape) {
+            malloc(t, shape);
+            zero(t);
     }
 
     void unaryExp(const LDG::Tensor& x, LDG::Tensor& r, 
@@ -285,10 +339,6 @@ public:
         (dev->*f)(x, y, r);
     }
 
-private:
-    typedef Eigen::TensorMap<Eigen::Tensor<dtype, 1>> Vec;
-    typedef Eigen::Map<Matrix<dtype, Dynamic, Dynamic, ColMajor>> Mat;
-
     dtype &at(const LDG::Tensor &x, int row_i) {
         assert(row_i < x.row());
         return x.v[row_i];
@@ -299,6 +349,11 @@ private:
                 row_i < x.row());
         return x.v[x.row() * col_i + row_i];
     }
+
+
+private:
+    typedef Eigen::TensorMap<Eigen::Tensor<dtype, 1>> Vec;
+    typedef Eigen::Map<Matrix<dtype, Dynamic, Dynamic, ColMajor>> Mat;
 
     Vec to_vec(const LDG::Tensor &x) {
         return Vec(x.v, x.shape().size());
