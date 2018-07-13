@@ -237,11 +237,6 @@ class MinPoolNode : public PoolNode {
 		}
 		device.concat(vec_ins, in_x);
 		device.FMinPooling(in_x, val, index);
-		cout << "=============" << endl;
-		for(int idx = 0; idx < dim; idx++)
-			cout << "index: " << index[idx] << " ";
-		cout << endl;
-		cout << "=============" << endl;
     }
 
     inline void backward() {

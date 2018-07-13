@@ -9,7 +9,10 @@
 #define SPARSEPARAM_H_
 
 #include "BaseParam.h"
-#include "cpu/cpu_impl.h"
+
+#if USE_CUDA
+#include "cuda/cuda_impl.h"
+#endif
 
 // Notice: aux_square is an aux_squareiliary variable to help parameter updating
 // The in-out dimension definiation is different with dense parameters.
@@ -26,10 +29,10 @@ class SparseParam : public BaseParam {
         //not in the aligned memory pool
         //val.init(outDim, inDim);
         dtype bound = sqrt(3.0 / (outDim));
-		device.random_uniform(val, Shape({outDim, inDim}), -bound, bound);
-		device.init(grad, Shape({outDim, inDim}));
-		device.init(aux_square, Shape({outDim, inDim}));
-		device.init(aux_mean, Shape({outDim, inDim}));
+	device.random_uniform(val, Shape({outDim, inDim}), -bound, bound);
+	device.init(grad, Shape({outDim, inDim}));
+	device.init(aux_square, Shape({outDim, inDim}));
+	device.init(aux_mean, Shape({outDim, inDim}));
 
         //val.random(bound);
         //grad.init(outDim, inDim);
@@ -70,9 +73,9 @@ class SparseParam : public BaseParam {
 		LDG::Tensor cpu_aux_square;
 		LDG::Tensor cpu_val;
 
-		cpu_grad.device_type == CPU;	
-		cpu_aux_square.device_type == CPU;	
-		cpu_val.device_type == CPU;	
+		cpu_grad.device_type = CPU;	
+		cpu_aux_square.device_type = CPU;	
+		cpu_val.device_type = CPU;	
 
 		cpu_grad.shape_ = grad.shape();
 		cpu_aux_square.shape_ = aux_square.shape();
@@ -113,21 +116,66 @@ class SparseParam : public BaseParam {
     }
 
     inline void updateAdam(dtype belta1, dtype belta2, dtype alpha, dtype reg, dtype eps) {
+		LDG::Tensor cpu_grad;
+		LDG::Tensor cpu_aux_square;
+		LDG::Tensor cpu_aux_mean;
+		LDG::Tensor cpu_val;
+
+		cpu_grad.device_type = CPU;	
+		cpu_aux_square.device_type = CPU;	
+		cpu_aux_mean.device_type = CPU;
+		cpu_val.device_type = CPU;	
+
+		cpu_grad.shape_ = grad.shape();
+		cpu_aux_square.shape_ = aux_square.shape();
+		cpu_aux_mean.shape_ = aux_mean.shape();
+		cpu_val.shape_ = val.shape();
+		
+		cpu_grad.v = new dtype[grad.shape().size()];
+		cpu_aux_square.v = new dtype[aux_square.shape().size()];
+		cpu_aux_mean.v = new dtype[aux_mean.shape().size()];
+		cpu_val.v = new dtype[val.shape().size()];
+
+		device.to_cpu(grad, cpu_grad);
+		device.to_cpu(aux_square, cpu_aux_square);
+		device.to_cpu(aux_mean, cpu_aux_mean);
+		device.to_cpu(val, cpu_val);
+
+		dtype lr_t;
+		int inDim = indexers.size();
+		int row = grad.shape().dims()[0];
+		for (int index = 0; index < inDim; index++) {
+			if (!indexers[index]) continue;
+			for (int idx = 0; idx < row; idx++) {
+				cpu_grad.v[index * row + idx] = cpu_grad.v[index * row + idx] + cpu_val.v[index * row + idx] * reg;
+				cpu_aux_mean.v[index * row + idx] = belta1 * cpu_aux_mean.v[index * row + idx] + (1 - belta1) * cpu_grad.v[index * row + idx];
+				cpu_aux_square.v[index * row + idx] = belta2 * cpu_aux_square.v[index * row + idx] + (1 - belta2) * cpu_grad.v[index * row + idx] * cpu_grad.v[index * row + idx];
+				lr_t = alpha * sqrt(1 - pow(belta2, last_update[index] + 1)) / (1 - pow(belta1, last_update[index] + 1));
+				cpu_val.v[index * row + idx] = cpu_val.v[index * row + idx] - cpu_aux_mean.v[index * row + idx] * lr_t / sqrt(cpu_aux_square.v[index * row + idx] + eps);
+			}
+			last_update[index]++;
+		}
+		device.set(grad, cpu_grad.v, grad.shape().size());
+		device.set(aux_square, cpu_aux_square.v, aux_square.shape().size());
+		device.set(aux_mean, cpu_aux_mean.v, aux_mean.shape().size());
+		device.set(val, cpu_val.v, val.shape().size());
+
 		/*
-        dtype lr_t;
-        int inDim = indexers.size();
-        for (int index = 0; index < inDim; index++) {
-            if (!indexers[index]) continue;
-            for (int idx = 0; idx < grad.row; idx++) {
-                grad[index][idx] = grad[index][idx] + val[index][idx] * reg;
-                aux_mean[index][idx] = belta1 * aux_mean[index][idx] + (1 - belta1) * grad[index][idx];
-                aux_square[index][idx] = belta2 * aux_square[index][idx] + (1 - belta2) * grad[index][idx] * grad[index][idx];
-                lr_t = alpha * sqrt(1 - pow(belta2, last_update[index] + 1)) / (1 - pow(belta1, last_update[index] + 1));
-                val[index][idx] = val[index][idx] - aux_mean[index][idx] * lr_t / sqrt(aux_square[index][idx] + eps);
-            }
-            last_update[index]++;
-        }
-		*/
+		   dtype lr_t;
+		   int inDim = indexers.size();
+		   for (int index = 0; index < inDim; index++) {
+		   if (!indexers[index]) continue;
+		   for (int idx = 0; idx < grad.row; idx++) {
+		   grad[index][idx] = grad[index][idx] + val[index][idx] * reg;
+		   aux_mean[index][idx] = belta1 * aux_mean[index][idx] + (1 - belta1) * grad[index][idx];
+		   aux_square[index][idx] = belta2 * aux_square[index][idx] + (1 - belta2) * grad[index][idx] * grad[index][idx];
+		   lr_t = alpha * sqrt(1 - pow(belta2, last_update[index] + 1)) / (1 - pow(belta1, last_update[index] + 1));
+		   val[index][idx] = val[index][idx] - aux_mean[index][idx] * lr_t / sqrt(aux_square[index][idx] + eps);
+		   }
+		   last_update[index]++;
+		   }
+		 */
+
     }
 
     inline void randpoint(int& idx, int &idy) {
