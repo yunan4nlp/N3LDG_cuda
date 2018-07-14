@@ -84,10 +84,29 @@ public:
         to_vec(r) = to_vec(x).sigmoid();
     }
 
-    void Frelu(const LDG::Tensor& x, LDG::Tensor& r) {}
-    void Fleaky_relu(const LDG::Tensor& x, LDG::Tensor& r) {}
-    void Fexp(const LDG::Tensor& x, LDG::Tensor& r) {}
-    void Flog(const LDG::Tensor& x, LDG::Tensor& r) {}
+    void Frelu(const LDG::Tensor& x, LDG::Tensor& r) {
+        assert(x.shape().size() == r.shape().size());
+        to_vec(r) = to_vec(x).unaryExpr([](dtype v) -> dtype {
+            return v > 0.0f ? v : 0.0f;});
+    }
+
+    void Fleaky_relu(const LDG::Tensor& x, LDG::Tensor& r) {
+        assert(x.shape().size() == r.shape().size());
+        to_vec(r) = to_vec(x).unaryExpr([](dtype v) -> dtype {
+            return v > 0.0f ? v : v * -0.1;});
+    }
+
+    void Fexp(const LDG::Tensor& x, LDG::Tensor& r) {
+        assert(x.shape().size() == r.shape().size());
+        to_vec(r) = to_vec(x).unaryExpr([](dtype v) -> dtype {
+              return exp(v);});
+    }
+
+    void Flog(const LDG::Tensor& x, LDG::Tensor& r) {
+        assert(x.shape().size() == r.shape().size());
+        to_vec(r) = to_vec(x).unaryExpr([](dtype v) -> dtype {
+            return log(v);});
+    }
 
     void Fsquare(const LDG::Tensor& x, LDG::Tensor& r) {
         assert(x.shape().size() == r.shape().size());
@@ -110,7 +129,10 @@ public:
                 return (1 + y) * (1 - y); });
     }
 
-    void Dleaky_relu(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r) {}
+    void Dleaky_relu(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r) {
+
+    }
+
     void Dsigmoid(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r) {}
     void Drelu(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r) {}
     void Dexp(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r) {}
@@ -156,14 +178,31 @@ public:
     }
 
     void Fadd_scalar(const LDG::Tensor& x, const dtype y, LDG::Tensor& r) {
-
+        to_vec(r) = to_vec(x) + y;
     }
 
     void Fmultiply_scalar(const LDG::Tensor& x, const dtype y, LDG::Tensor& r) {
-      to_vec(r) = y * to_vec(x);
+        to_vec(r) = y * to_vec(x);
     }
 
-    void Fadd_col(LDG::Tensor& x, const LDG::Tensor& y_col, int col) {}
+    void Fadd_col(LDG::Tensor& x, const LDG::Tensor& y_col, int col) {
+        auto x_dims = x.shape().dims();
+        auto y_dims = y_col.shape().dims();
+        int size = x.shape().size();
+        int dim0 = x_dims[0];
+        int dim1 = x_dims[1];
+        if(col >= dim1) {
+                cout << "col index beyond x dim" << endl;	
+                return;
+        }
+
+        if (y_dims[1] != 1) {
+                cout << "y is not a vector" << endl;
+                return;
+        }
+
+        Vec(x.v + col * dim0, dim0) += Vec(y_col.v, dim0);
+    }
 
     void Dadd(const LDG::Tensor& x, const LDG::Tensor& y, const LDG::Tensor& r,
             const LDG::Tensor& gr, LDG::Tensor& gx, LDG::Tensor& gy) {}
