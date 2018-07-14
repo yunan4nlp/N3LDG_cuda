@@ -111,7 +111,11 @@ class LookupTable {
         sum = 0.0;
         int count = 0;
 
-		dtype E_v[nDim * nVSize] = {0};
+	int max_size = nDim * nVSize;
+	dtype* E_v = new dtype[max_size];
+	for(int idx = 0; idx < max_size; idx++) {
+		E_v[idx] = 0;
+	}
 
         for (int idx = 0; idx < sLines.size(); idx++) {
             split_bychar(sLines[idx], vecInfo, ' ');
@@ -173,7 +177,8 @@ class LookupTable {
         if (normalize) {
             //E.val.norm2one();
         }
-		device.set(E.val, E_v, nDim * nVSize);
+	device.set(E.val, E_v, nDim * nVSize);
+	delete []E_v;
         return true;
     }
 

@@ -8,18 +8,16 @@
 
 class SoftMaxLoss {
   public:
-    dtype loss(PNode x, const vector<dtype> &answer, Metric& eval, int batchsize = 1) {
+    inline dtype loss(PNode x, const vector<dtype> &answer, Metric& eval, int batchsize = 1) {
         int nDim = x->val.shape().dims()[0];
 		//device.show_val(x->val);
         int labelsize = answer.size();
         if (labelsize != nDim) {
-            std::cerr << "labelsize:" << labelsize << " nDim:" << nDim <<
-                std::endl;
             std::cerr << "softmax_loss error: dim size invalid" << std::endl;
-            abort();
+            return -1.0;
         }
 		LDG::Tensor cpu_x;
-		cpu_x.device_type == CPU;	
+		cpu_x.device_type = CPU;	
 		cpu_x.shape_ = x->val.shape();
 		cpu_x.v = new dtype[nDim];
 		device.to_cpu(x->val, cpu_x);
@@ -70,7 +68,7 @@ class SoftMaxLoss {
         //int nDim = x->dim;
         int nDim = x->val.shape().dims()[0];
 		LDG::Tensor cpu_x;
-		cpu_x.device_type == CPU;	
+		cpu_x.device_type = CPU;	
 		cpu_x.shape_ = x->val.shape();
 		cpu_x.v = new dtype[nDim];
 		device.to_cpu(x->val, cpu_x);
@@ -98,7 +96,7 @@ class SoftMaxLoss {
         //int nDim = x->dim;
         int nDim = x->val.shape().dims()[0];
 		LDG::Tensor cpu_x;
-		cpu_x.device_type == CPU;	
+		cpu_x.device_type = CPU;	
 		cpu_x.shape_ = x->val.shape();
 		cpu_x.v = new dtype[nDim];
 		device.to_cpu(x->val, cpu_x);

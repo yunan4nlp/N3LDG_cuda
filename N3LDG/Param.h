@@ -10,7 +10,10 @@
 
 #include "Eigen/Dense"
 #include "BaseParam.h"
-#include "cpu/cpu_impl.h"
+
+#if USE_CUDA
+#include "cuda/cuda_impl.h"
+#endif
 
 
 // Notice: aux is an auxiliary variable to help parameter updating
@@ -87,15 +90,63 @@ class Param : public BaseParam {
     }
 
     inline void updateAdam(dtype belta1, dtype belta2, dtype alpha, dtype reg, dtype eps) {
+	    if (outDim() > 1 && inDim() > 1) {
+		    LDG::Tensor v_r;
+		    device.init(v_r, val.shape()); 
+		    device.Fmultiply_scalar(val, reg, v_r);
+		    device.Fadd(grad, v_r, grad);
+	    }
+		LDG::Tensor belta_aux_mean;
+		device.init(belta_aux_mean, aux_mean.shape());
+		device.Fmultiply_scalar(aux_mean, belta1, belta_aux_mean);
+
+		LDG::Tensor belta_grad;
+		device.init(belta_grad, grad.shape());
+		device.Fmultiply_scalar(grad, 1 - belta1, belta_grad);
+
+		device.Fadd(belta_aux_mean, belta_grad, aux_mean);
+		LDG::Tensor belta_aux_square;
+		device.init(belta_aux_square, aux_square.shape());
+		device.Fmultiply_scalar(aux_square, belta2, belta_aux_square);
+
+		LDG::Tensor grad_square;
+		device.init(grad_square, grad.shape());
+
+		device.Fsquare(grad, grad_square);
+
+		LDG::Tensor belta_grad_square;
+		device.init(belta_grad_square, grad.shape());            
+		device.Fmultiply_scalar(grad_square, (1 - belta2), belta_grad_square);
+
+		device.Fadd(belta_aux_square, belta_grad_square, aux_square);
+		dtype lr_t = alpha * sqrt(1 - pow(belta2, iter + 1)) / (1 - pow(belta1, iter + 1));
+
+		LDG::Tensor aux_square_eps;
+		device.init(aux_square_eps, aux_square.shape());
+		device.Fadd_scalar(aux_square, eps, aux_square_eps);
+
+		LDG::Tensor aux_square_eps_sqrt;
+		device.init(aux_square_eps_sqrt, aux_square.shape());
+		device.Fsqrt(aux_square_eps, aux_square_eps_sqrt);
+
+		LDG::Tensor aux_mean_lrt;
+		device.init(aux_mean_lrt, aux_mean.shape());
+		device.Fmultiply_scalar(aux_mean, lr_t, aux_mean_lrt);
+
+		LDG::Tensor val_delta;
+		device.init(val_delta, val.shape());
+		device.Fdivide(aux_mean_lrt, aux_square_eps_sqrt, val_delta);
+		device.Fsubtract(val, val_delta, val);
+		iter++;
 		/*
-        if (val.col > 1 && val.row > 1)grad.vec() = grad.vec() + val.vec() * reg;
-        aux_mean.vec() = belta1 * aux_mean.vec() + (1 - belta1) * grad.vec();
-        aux_square.vec() = belta2 * aux_square.vec() + (1 - belta2) * grad.vec().square();
-        dtype lr_t = alpha * sqrt(1 - pow(belta2, iter + 1)) / (1 - pow(belta1, iter + 1));
-        val.vec() = val.vec() - aux_mean.vec() * lr_t / (aux_square.vec() + eps).sqrt();
-        iter++;
-		*/
-    }
+		   if (val.col > 1 && val.row > 1)grad.vec() = grad.vec() + val.vec() * reg;
+		   aux_mean.vec() = belta1 * aux_mean.vec() + (1 - belta1) * grad.vec();
+		   aux_square.vec() = belta2 * aux_square.vec() + (1 - belta2) * grad.vec().square();
+		   dtype lr_t = alpha * sqrt(1 - pow(belta2, iter + 1)) / (1 - pow(belta1, iter + 1));
+		   val.vec() = val.vec() - aux_mean.vec() * lr_t / (aux_square.vec() + eps).sqrt();
+		   iter++;
+		 */
+	}
 
     inline void randpoint(int& idx, int &idy) {
         //select indexes randomly
