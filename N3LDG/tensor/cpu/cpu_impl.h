@@ -53,7 +53,7 @@ public:
 
     void get_col(const LDG::Tensor& x, int col, LDG::Tensor& r) {
         assert(col < x.col() && x.row() == r.row());
-        to_vec(r) = Vec(x.v, x.row());
+        to_vec(r) = Vec(x.v + col * x.row(), x.row());
     }
 
     void random_uniform(LDG::Tensor &t, const Shape &shape, float lower,
@@ -129,11 +129,13 @@ public:
                 return (1 + y) * (1 - y); });
     }
 
-    void Dleaky_relu(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r) {
+    void Dleaky_relu(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r) {}
 
+    void Dsigmoid(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r) {
+        to_vec(r) = to_vec(y).unaryExpr([](dtype y) -> dtype { 
+                return y * (1 - y); });
     }
 
-    void Dsigmoid(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r) {}
     void Drelu(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r) {}
     void Dexp(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r) {}
     void Dlog(const LDG::Tensor& x, const LDG::Tensor& y, LDG::Tensor& r) {}

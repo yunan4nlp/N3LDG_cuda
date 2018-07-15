@@ -20,6 +20,9 @@
 #if USE_CUDA
 #include "cuda/cuda_impl.h"
 CudaDevice device;
+#else
+#include "cpu/cpu_impl.h"
+CpuDevice device;
 #endif
 
 class Execute;
