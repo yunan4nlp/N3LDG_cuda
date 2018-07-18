@@ -19,6 +19,11 @@ public:
 	virtual void copy_data(const LDG::Tensor &src, LDG::Tensor& dst) = 0;
 	virtual void get_col(const LDG::Tensor& x, int col, LDG::Tensor& r) = 0;
 
+	virtual void get_cols(const LDG::Tensor& x, int* cols, int col_num, LDG::Tensor& r) = 0;
+
+	virtual void FLookup(const LDG::Tensor& x, int* cols, int col_num, vector<LDG::PTensor>& vec_r) = 0;
+	virtual void DLookup(const LDG::Tensor& gx, int* cols, int col_num, vector<LDG::PTensor>& vec_loss) = 0;
+
 	virtual void random_uniform(LDG::Tensor &t, const Shape &shape, float lower, float upper) = 0;
 	virtual void random_bernoulli(LDG::Tensor &t, const Shape &shape, float p) = 0;
 	virtual void random_normal(LDG::Tensor &t, const Shape &shape, float mean, float sd) = 0;
@@ -95,18 +100,20 @@ public:
 
 	virtual void Ftranspose(const LDG::Tensor& x, LDG::Tensor& r) = 0;
 
-	virtual void FSumPooling(const LDG::Tensor &x, LDG::Tensor &y) = 0;
 
-	virtual void FAvgPooling(const LDG::Tensor &x, LDG::Tensor &y) = 0;
+	virtual void FAvgPooling(const vector<LDG::PTensor>& vec_x, LDG::Tensor& y) = 0;
 
-	virtual void FMaxPooling(const LDG::Tensor &x, LDG::Tensor &y, int* index) = 0;
+	virtual void FSumPooling(const vector<LDG::PTensor>& vec_x, LDG::Tensor& y) = 0;
 
-	virtual void DMaxPooling(const LDG::Tensor& x, const LDG::Tensor& y, const LDG::Tensor& gy, LDG::Tensor& gx, int* index) = 0;
+	virtual void DSumPooling(const LDG::Tensor& gy, vector<LDG::PTensor>& vec_gx) = 0;
 
-	virtual void FMinPooling(const LDG::Tensor &x, LDG::Tensor &y, int* index) = 0;
+	virtual void FMaxPooling(const vector<LDG::PTensor>& vec_x, LDG::Tensor &y, int* index) = 0;
 
-	virtual void DMinPooling(const LDG::Tensor& x, const LDG::Tensor& y, const LDG::Tensor& gy, LDG::Tensor& gx, int* index) = 0;
+	virtual void DMaxPooling(const LDG::Tensor& gy, vector<LDG::PTensor>& vec_gx, int* index) = 0;
 
+	virtual void FMinPooling(const vector<LDG::PTensor>& vec_x, LDG::Tensor &y, int* index) = 0;
+
+	virtual void DMinPooling(const LDG::Tensor& gy, vector<LDG::PTensor>& vec_gx, int* index) = 0;
 
 	void unaryExp(const LDG::Tensor& x, LDG::Tensor& r, 
 			Device *dev, void (Device::*f)(const LDG::Tensor&, LDG::Tensor& )) {

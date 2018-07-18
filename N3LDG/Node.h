@@ -18,7 +18,7 @@
 
 
 #if USE_CUDA
-#include "cuda/cuda_impl.h"
+#include "cuda_v2/cuda_impl.h"
 CudaDevice device;
 #endif
 

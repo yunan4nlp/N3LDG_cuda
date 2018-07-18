@@ -2,12 +2,12 @@
 #define _LOOKUPTABLE_H_
 
 /*
-*  LookupTable.h:
-*  Lookup operation, for embeddings
-*
-*  Created on: Apr 22, 2017
-*      Author: mszhang
-*/
+ *  LookupTable.h:
+ *  Lookup operation, for embeddings
+ *
+ *  Created on: Apr 22, 2017
+ *      Author: mszhang
+ */
 
 #include "SparseParam.h"
 #include "MyLib.h"
@@ -17,275 +17,275 @@
 #include "ModelUpdate.h"
 
 class LookupTable {
-  public:
-    PAlphabet elems;
-    SparseParam E;
-    bool bFineTune;
-    int nDim;
-    int nVSize;
-    int nUNKId;
+	public:
+		PAlphabet elems;
+		SparseParam E;
+		bool bFineTune;
+		int nDim;
+		int nVSize;
+		int nUNKId;
 
-  public:
+	public:
 
-    LookupTable() {
-        nVSize = 0;
-        nDim = 0;
-        elems = NULL;
-        nUNKId = -1;
-        bFineTune = false;
-    }
+		LookupTable() {
+			nVSize = 0;
+			nDim = 0;
+			elems = NULL;
+			nUNKId = -1;
+			bFineTune = false;
+		}
 
-    //random initialization
-    inline void initial(PAlphabet alpha, int dim, bool fineTune = true) {
-        elems = alpha;
-        nVSize = elems->size();
-        nUNKId = elems->from_string(unknownkey);
-        initialWeights(dim, fineTune);
-    }
+		//random initialization
+		inline void initial(PAlphabet alpha, int dim, bool fineTune = true) {
+			elems = alpha;
+			nVSize = elems->size();
+			nUNKId = elems->from_string(unknownkey);
+			initialWeights(dim, fineTune);
+		}
 
-    //initialization by pre-trained embeddings
-    inline bool initial(PAlphabet alpha, const string& inFile, bool fineTune = true, bool bNormalize = true) {
-        elems = alpha;
-        nVSize = elems->size();
-        nUNKId = elems->from_string(unknownkey);
-        return initialWeights(inFile, fineTune, bNormalize);
-    }
+		//initialization by pre-trained embeddings
+		inline bool initial(PAlphabet alpha, const string& inFile, bool fineTune = true, bool bNormalize = true) {
+			elems = alpha;
+			nVSize = elems->size();
+			nUNKId = elems->from_string(unknownkey);
+			return initialWeights(inFile, fineTune, bNormalize);
+		}
 
-    inline void initialWeights(int dim, bool tune) {
-        if (nVSize == 0) {
-            std::cout << "please check the alphabet" << std::endl;
-            return;
-        }
-        nDim = dim;
-        E.initial(nDim, nVSize);
-        //E.val.norm2one();
-        bFineTune = tune;
-    }
+		inline void initialWeights(int dim, bool tune) {
+			if (nVSize == 0) {
+				std::cout << "please check the alphabet" << std::endl;
+				return;
+			}
+			nDim = dim;
+			E.initial(nDim, nVSize);
+			//E.val.norm2one();
+			bFineTune = tune;
+		}
 
-    // default should be fineTune, just for initialization
-    inline bool initialWeights(const string& inFile, bool tune, bool normalize = true) {
-        if (nVSize == 0 || !elems->is_fixed()) {
-            std::cout << "please check the alphabet" << std::endl;
-            return false;
-        }
+		// default should be fineTune, just for initialization
+		inline bool initialWeights(const string& inFile, bool tune, bool normalize = true) {
+			if (nVSize == 0 || !elems->is_fixed()) {
+				std::cout << "please check the alphabet" << std::endl;
+				return false;
+			}
 
-        ifstream inf;
-        if (inf.is_open()) {
-            inf.close();
-            inf.clear();
-        }
-        inf.open(inFile.c_str());
+			ifstream inf;
+			if (inf.is_open()) {
+				inf.close();
+				inf.clear();
+			}
+			inf.open(inFile.c_str());
 
-        string strLine, curWord;
-        int wordId;
+			string strLine, curWord;
+			int wordId;
 
-        vector<string> sLines;
-        sLines.clear();
-        while (1) {
-            if (!my_getline(inf, strLine)) {
-                break;
-            }
-            if (!strLine.empty()) {
-                sLines.push_back(strLine);
-            }
-        }
-        inf.close();
-        if (sLines.size() == 0) {
-            return false;
-        }
+			vector<string> sLines;
+			sLines.clear();
+			while (1) {
+				if (!my_getline(inf, strLine)) {
+					break;
+				}
+				if (!strLine.empty()) {
+					sLines.push_back(strLine);
+				}
+			}
+			inf.close();
+			if (sLines.size() == 0) {
+				return false;
+			}
 
-        //find the first line, decide the wordDim;
-        vector<string> vecInfo;
-        split_bychar(sLines[0], vecInfo, ' ');
-        nDim = vecInfo.size() - 1;
+			//find the first line, decide the wordDim;
+			vector<string> vecInfo;
+			split_bychar(sLines[0], vecInfo, ' ');
+			nDim = vecInfo.size() - 1;
 
-        E.initial(nDim, nVSize);
-        //E.val = 0;
-        device.zero(E.val);
+			E.initial(nDim, nVSize);
+			//E.val = 0;
+			device.zero(E.val);
 
-        std::cout << "word embedding dim is " << nDim << std::endl;
+			std::cout << "word embedding dim is " << nDim << std::endl;
 
-        bool bHasUnknown = false;
-        unordered_set<int> indexers;
-        NRVec<dtype> sum(nDim);
-        sum = 0.0;
-        int count = 0;
+			bool bHasUnknown = false;
+			unordered_set<int> indexers;
+			NRVec<dtype> sum(nDim);
+			sum = 0.0;
+			int count = 0;
 
-	int max_size = nDim * nVSize;
-	dtype* E_v = new dtype[max_size];
-	for(int idx = 0; idx < max_size; idx++) {
-		E_v[idx] = 0;
-	}
+			int max_size = nDim * nVSize;
+			dtype* E_v = new dtype[max_size];
+			for(int idx = 0; idx < max_size; idx++) {
+				E_v[idx] = 0;
+			}
 
-        for (int idx = 0; idx < sLines.size(); idx++) {
-            split_bychar(sLines[idx], vecInfo, ' ');
-            if (vecInfo.size() != nDim + 1) {
-                std::cout << "error embedding file" << std::endl;
-            }
-            curWord = vecInfo[0];
-            //we assume the keys are normalized
-            wordId = elems->from_string(curWord);
-            if (wordId >= 0) {
-                count++;
-                if (nUNKId == wordId) {
-                    bHasUnknown = true;
-                }
-                indexers.insert(wordId);
-				dtype cur_data[nDim];
-                for (int idy = 0; idy < nDim; idy++) {
-                    dtype curValue = atof(vecInfo[idy + 1].c_str());
-                    sum[idy] += curValue;
-					cur_data[idy] = curValue;
-					E_v[nDim * wordId + idy] += curValue;
-                    //E.val[wordId][idy] += curValue;
-                }
-            }
-        }
-
-
-        if (count == 0) {
-            //E.val.random(sqrt(3.0 / nDim));
-			dtype val = sqrt(3.0 / nDim);
-			device.random_uniform(E.val, E.val.shape(), -val, val);
-
-            std::cout << "find no overlapped lexicons in the embedding file" << std::endl;
-            return false;
-        }
-
-        if (nUNKId >= 0 && !bHasUnknown) {
-            for (int idx = 0; idx < nDim; idx++) {
-                E_v[nUNKId * nDim + idx] = sum[idx] / (count + 1);
-            }
-            indexers.insert(nUNKId);
-            count++;
-            std::cout << unknownkey << " not found, using averaged value to initialize." << std::endl;
-        }
-
-        int oovWords = 0;
-        for (int id = 0; id < nVSize; id++) {
-            if (indexers.find(id) == indexers.end()) {
-                oovWords++;
-                for (int idy = 0; idy < nDim; idy++) {
-                    E_v[id * nDim + idy] = nUNKId >= 0 ? E_v[nUNKId * nDim + idy] : sum[idy] / count;
-                }
-            }
-        }
-
-        std::cout << "OOV num is " << oovWords << ", total num is " << nVSize << ", embedding oov ratio is " << oovWords * 1.0 / nVSize << std::endl;
-        std::cout << "unknown id" << nUNKId << std::endl;
-        bFineTune = tune;
-        if (normalize) {
-            //E.val.norm2one();
-        }
-	device.set(E.val, E_v, nDim * nVSize);
-	delete []E_v;
-        return true;
-    }
-
-    inline void exportAdaParams(ModelUpdate& ada) {
-        if (bFineTune) {
-            ada.addParam(&E);
-        }
-    }
+			for (int idx = 0; idx < sLines.size(); idx++) {
+				split_bychar(sLines[idx], vecInfo, ' ');
+				if (vecInfo.size() != nDim + 1) {
+					std::cout << "error embedding file" << std::endl;
+				}
+				curWord = vecInfo[0];
+				//we assume the keys are normalized
+				wordId = elems->from_string(curWord);
+				if (wordId >= 0) {
+					count++;
+					if (nUNKId == wordId) {
+						bHasUnknown = true;
+					}
+					indexers.insert(wordId);
+					dtype cur_data[nDim];
+					for (int idy = 0; idy < nDim; idy++) {
+						dtype curValue = atof(vecInfo[idy + 1].c_str());
+						sum[idy] += curValue;
+						cur_data[idy] = curValue;
+						E_v[nDim * wordId + idy] += curValue;
+						//E.val[wordId][idy] += curValue;
+					}
+				}
+			}
 
 
-    inline int getElemId(const string& strFeat) {
-        return elems->from_string(strFeat);
-    }
+			if (count == 0) {
+				//E.val.random(sqrt(3.0 / nDim));
+				dtype val = sqrt(3.0 / nDim);
+				device.random_uniform(E.val, E.val.shape(), -val, val);
 
-    inline void save(std::ofstream &os) const {
-        E.save(os);
-        os << bFineTune << std::endl;
-        os << nDim << std::endl;
-        os << nVSize << std::endl;
-        os << nUNKId << std::endl;
-    }
+				std::cout << "find no overlapped lexicons in the embedding file" << std::endl;
+				return false;
+			}
 
-    //set alpha directly
-    inline void load(std::ifstream &is, PAlphabet alpha) {
-        E.load(is);
-        is >> bFineTune;
-        is >> nDim;
-        is >> nVSize;
-        is >> nUNKId;
-        elems = alpha;
-    }
+			if (nUNKId >= 0 && !bHasUnknown) {
+				for (int idx = 0; idx < nDim; idx++) {
+					E_v[nUNKId * nDim + idx] = sum[idx] / (count + 1);
+				}
+				indexers.insert(nUNKId);
+				count++;
+				std::cout << unknownkey << " not found, using averaged value to initialize." << std::endl;
+			}
+
+			int oovWords = 0;
+			for (int id = 0; id < nVSize; id++) {
+				if (indexers.find(id) == indexers.end()) {
+					oovWords++;
+					for (int idy = 0; idy < nDim; idy++) {
+						E_v[id * nDim + idy] = nUNKId >= 0 ? E_v[nUNKId * nDim + idy] : sum[idy] / count;
+					}
+				}
+			}
+
+			std::cout << "OOV num is " << oovWords << ", total num is " << nVSize << ", embedding oov ratio is " << oovWords * 1.0 / nVSize << std::endl;
+			std::cout << "unknown id" << nUNKId << std::endl;
+			bFineTune = tune;
+			if (normalize) {
+				//E.val.norm2one();
+			}
+			device.set(E.val, E_v, nDim * nVSize);
+			delete []E_v;
+			return true;
+		}
+
+		inline void exportAdaParams(ModelUpdate& ada) {
+			if (bFineTune) {
+				ada.addParam(&E);
+			}
+		}
+
+
+		inline int getElemId(const string& strFeat) {
+			return elems->from_string(strFeat);
+		}
+
+		inline void save(std::ofstream &os) const {
+			E.save(os);
+			os << bFineTune << std::endl;
+			os << nDim << std::endl;
+			os << nVSize << std::endl;
+			os << nUNKId << std::endl;
+		}
+
+		//set alpha directly
+		inline void load(std::ifstream &is, PAlphabet alpha) {
+			E.load(is);
+			is >> bFineTune;
+			is >> nDim;
+			is >> nVSize;
+			is >> nUNKId;
+			elems = alpha;
+		}
 
 };
 
 
 class LookupNode : public Node {
-  public:
-    LookupTable* param;
-    int xid;
+	public:
+		LookupTable* param;
+		int xid;
 
-  public:
-    LookupNode() {
-        xid = -1;
-        param = NULL;
-        node_type = "lookup";
-    }
+	public:
+		LookupNode() {
+			xid = -1;
+			param = NULL;
+			node_type = "lookup";
+		}
 
-    inline void setParam(LookupTable* paramInit) {
-        param = paramInit;
-    }
+		inline void setParam(LookupTable* paramInit) {
+			param = paramInit;
+		}
 
-    inline void clearValue() {
-        Node::clearValue();
-        xid = -1;
-    }
+		inline void clearValue() {
+			Node::clearValue();
+			xid = -1;
+		}
 
-  public:
-    //notice the output
-    //this should be leaf nodes
-    void forward(Graph *cg, const string& strNorm) {
-        assert(param != NULL);
-        xid = param->getElemId(strNorm);
-        if (xid < 0 && param->nUNKId >= 0) {
-            xid = param->nUNKId;
-        }
-        if (param->bFineTune && xid < 0) {
-            std::cout << "Caution: unknown words are not modeled !" << std::endl;
-        }
-        degree = 0;
-        cg->addNode(this);
-    }
+	public:
+		//notice the output
+		//this should be leaf nodes
+		void forward(Graph *cg, const string& strNorm) {
+			assert(param != NULL);
+			xid = param->getElemId(strNorm);
+			if (xid < 0 && param->nUNKId >= 0) {
+				xid = param->nUNKId;
+			}
+			if (param->bFineTune && xid < 0) {
+				std::cout << "Caution: unknown words are not modeled !" << std::endl;
+			}
+			degree = 0;
+			cg->addNode(this);
+		}
 
-  public:
-    inline PExecute generate(bool bTrain);
+	public:
+		inline PExecute generate(bool bTrain);
 
-    // better to rewrite for deep understanding
-    inline bool typeEqual(PNode other) {
-        bool result = Node::typeEqual(other);
-        if (!result) return false;
+		// better to rewrite for deep understanding
+		inline bool typeEqual(PNode other) {
+			bool result = Node::typeEqual(other);
+			if (!result) return false;
 
-        LookupNode* conv_other = (LookupNode*)other;
-        if (param != conv_other->param) {
-            return false;
-        }
+			LookupNode* conv_other = (LookupNode*)other;
+			if (param != conv_other->param) {
+				return false;
+			}
 
-        return true;
-    }
+			return true;
+		}
 
-    // for which do no require merge
-  public:
-    void compute() {
-        if (xid >= 0) {
-            param->E.value(xid, val);
-			//cout << "shape:    " << param->E.val.shape().to_string() << endl;
-			//cout << "id:   "<< xid << endl;
-        } else {
-            //val.zero();
-            device.zero(val);
-        }
-    }
+		// for which do no require merge
+	public:
+		void compute() {
+			if (xid >= 0) {
+				param->E.value(xid, val);
+				//cout << "shape:    " << param->E.val.shape().to_string() << endl;
+				//cout << "id:   "<< xid << endl;
+			} else {
+				//val.zero();
+				device.zero(val);
+			}
+		}
 
-    void backward() {
-        assert(param != NULL);
-        if (xid == param->nUNKId || (xid >= 0 && param->bFineTune)) {
-            param->E.loss(xid, loss);
-        }
-    }
+		void backward() {
+			assert(param != NULL);
+			if (xid == param->nUNKId || (xid >= 0 && param->bFineTune)) {
+				param->E.loss(xid, loss);
+			}
+		}
 };
 
 
@@ -323,36 +323,65 @@ class LookupNode : public Node {
 //}
 //#else
 class LookupExecute :public Execute {
-  public:
-    bool bTrain;
-  public:
-    inline void  forward() {
-        int count = batch.size();
-//#pragma omp parallel for schedule(static,1)
-        for (int idx = 0; idx < count; idx++) {
-            LookupNode* ptr = (LookupNode*)batch[idx];
-            ptr->compute();
-            ptr->forward_drop(bTrain);
-        }
-    }
+	public:
+		bool bTrain;
+		//LDG::Tensor y;
+	public:
+		inline void  forward() {
+			int count = batch.size();
+			//#pragma omp parallel for schedule(static,1)
+			int indexes[count];
+			for (int idx = 0; idx < count; idx++) {
+				LookupNode* ptr = (LookupNode*)batch[idx];
+				indexes[idx] = ptr->xid;
+			}
 
-    inline void backward() {
-        int count = batch.size();
-//#pragma omp parallel for schedule(static,1)
-        for (int idx = 0; idx < count; idx++) {
-            LookupNode* ptr = (LookupNode*)batch[idx];
-            ptr->backward_drop();
-            ptr->backward();
-        }
-    }
+			vector<LDG::PTensor> vec_val;
+			for (int idx = 0; idx < count; idx++) {
+				LookupNode* ptr = (LookupNode*)batch[idx];
+				vec_val.push_back(&ptr->val);
+			}
+
+			LookupNode* ptr = (LookupNode*)batch[0];
+			device.FLookup(ptr->param->E.val, indexes, count, vec_val);
+
+			for (int idx = 0; idx < count; idx++) {
+				LookupNode* ptr = (LookupNode*)batch[idx];
+				ptr->forward_drop(bTrain);
+			}
+		}
+
+		inline void backward() {
+			int count = batch.size();
+			//#pragma omp parallel for schedule(static,1)
+			for (int idx = 0; idx < count; idx++) {
+				LookupNode* ptr = (LookupNode*)batch[idx];
+				ptr->backward_drop();
+
+				//ptr->backward();
+			}
+			vector<LDG::PTensor> vec_loss;
+			int array_xid[count];
+			for (int idx = 0; idx < count; idx++) {
+				LookupNode* ptr = (LookupNode*)batch[idx];
+				if(ptr->xid == ptr->param->nUNKId || (ptr->xid >= 0 && ptr->param->bFineTune)) {
+					vec_loss.push_back(&ptr->loss);		
+					array_xid[idx] = ptr->xid;
+					ptr->param->E.indexers[ptr->xid] = true;
+				}
+			}
+			LookupNode* ptr = (LookupNode*)batch[0];
+
+			device.DLookup(ptr->param->E.grad, array_xid, count, vec_loss);
+		}
 };
 
 
 inline PExecute LookupNode::generate(bool bTrain) {
-    LookupExecute* exec = new LookupExecute();
-    exec->batch.push_back(this);
-    exec->bTrain = bTrain;
-    return exec;
+	LookupExecute* exec = new LookupExecute();
+	exec->batch.push_back(this);
+	exec->bTrain = bTrain;
+	return exec;
 }
 //#endif
 

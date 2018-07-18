@@ -12,15 +12,14 @@
 class CudaDevice : public Device {
 	private:
 		cublasHandle_t handle;
-		double sum;
 
 	public:
 
 	public:
 		CudaDevice() {
 			Device::device_type = CUDA;
-			sum = 0;
 			cublasCreate(&handle);
+			cudaSetDevice(1);
 		}
 
 
@@ -130,6 +129,62 @@ class CudaDevice : public Device {
 			} else
 				cout << "get col dims are not matched" << endl;
 			cudaFree(gpu_cols);
+		}
+
+		void FLookup(const LDG::Tensor& x, int* cols, int col_num, vector<LDG::PTensor>& vec_r) {
+			if(vec_r.size() != col_num)
+				cout << "error vec_r size is not matched." << endl;
+
+			int *gpu_cols;
+			int memsize = sizeof(int) * col_num;
+			cudaMalloc((void **)&gpu_cols, memsize);
+			cudaMemcpy(gpu_cols, cols, memsize, cudaMemcpyHostToDevice);
+
+			dtype** v_data_r;
+			cudaMalloc((void **)&v_data_r, sizeof(dtype*) * col_num);
+			for(int i = 0; i < col_num; i++)
+				cudaMemcpy(v_data_r + i, &vec_r[i]->v, sizeof(dtype*) ,cudaMemcpyHostToDevice);
+
+			int xdim0 = x.shape().dims()[0];
+			int xdim1 = x.shape().dims()[1];
+			int rdim0 = vec_r[0]->shape().dims()[0];
+			int r_size = rdim0 * col_num;
+			
+			if(xdim0 == rdim0) {
+				FLookup_impl(x.v, v_data_r, xdim0, xdim1, r_size, gpu_cols, col_num);
+			} else
+				cout << "get col dims are not matched" << endl;
+			cudaFree(gpu_cols);
+			cudaFree(v_data_r);
+		}
+
+
+		void DLookup(const LDG::Tensor& gx, int* cols, int col_num, vector<LDG::PTensor>& vec_loss) {
+			if(vec_loss.size() != col_num)
+				cout << "error vec_loss size is not matched." << endl;
+
+			int *gpu_cols;
+			int memsize = sizeof(int) * col_num;
+			cudaMalloc((void **)&gpu_cols, memsize);
+			cudaMemcpy(gpu_cols, cols, memsize, cudaMemcpyHostToDevice);
+
+			dtype** v_data_loss;
+			cudaMalloc((void **)&v_data_loss, sizeof(dtype*) * col_num);
+			for(int i = 0; i < col_num; i++)
+				cudaMemcpy(v_data_loss + i, &vec_loss[i]->v, sizeof(dtype*) ,cudaMemcpyHostToDevice);
+
+			int gxdim0 = gx.shape().dims()[0];
+			int gxdim1 = gx.shape().dims()[1];
+			int ldim0 = vec_loss[0]->shape().dims()[0];
+			int l_size = ldim0 * col_num;
+			
+			if(gxdim0 == ldim0) {
+				DLookup_impl(gx.v, v_data_loss, gxdim0, gxdim1, l_size, gpu_cols, col_num);
+			} else
+				cout << "get col dims are not matched" << endl;
+
+			cudaFree(gpu_cols);
+			cudaFree(v_data_loss);
 		}
 
 		void random_uniform(LDG::Tensor &t, const Shape &shape, float lower, float upper) {
@@ -404,7 +459,6 @@ class CudaDevice : public Device {
 		}
 
 		void to_cpu(const LDG::Tensor &gpu_tensor, LDG::Tensor &cpu_tensor) {
-			auto t_start = std::chrono::high_resolution_clock::now();
 			if (gpu_tensor.device_type == CUDA && cpu_tensor.device_type == CPU) {
 				if(gpu_tensor.shape().has_same_dims(cpu_tensor.shape())) {
 					int memsize = gpu_tensor.shape().size() * sizeof(dtype);
@@ -417,13 +471,9 @@ class CudaDevice : public Device {
 			} else {
 				cout << "to_cpu tensor type is error" << endl;
 			}
-			auto t_end = std::chrono::high_resolution_clock::now();
-			double t = std::chrono::duration<double>(t_end - t_start).count();
-			sum += t;
-			cout << "time: " << t  << ", sum: "<< sum << endl;
 		}
 
-		void to_gpu(const LDG::Tensor &cpu_tensor, LDG::Tensor &gpu_tensor) {
+		void to_gpu(const LDG::Tensor &cpu_tensor, LDG::Tensor& gpu_tensor) {
 			if (gpu_tensor.device_type == CUDA && cpu_tensor.device_type == CPU) {
 				if(gpu_tensor.shape().has_same_dims(cpu_tensor.shape())) {
 					int memsize = cpu_tensor.shape().size() * sizeof(dtype);
@@ -448,59 +498,123 @@ class CudaDevice : public Device {
 				std::cout << "error, transpose dim is not match" << std::endl;
 		}
 
-		void FSumPooling(const LDG::Tensor& x, LDG::Tensor& y) {
-			const int n = x.shape()[1];
+		void FAvgPooling(const vector<LDG::PTensor>& vec_x, LDG::Tensor& y) {
+			const int n = vec_x.size();
 			const int r = y.shape().size();
 			const int s = y.shape().lower_volume(1);
-			Fsumpooling_impl(x.v, y.v, n, r, s);
+			dtype** v_data_x;
+			cudaMalloc((void **)&v_data_x, sizeof(dtype*) * n);
+			for(int i = 0; i < n; i++)
+				cudaMemcpy(v_data_x + i, &vec_x[i]->v, sizeof(dtype*) ,cudaMemcpyHostToDevice);
+			Favgpooling_impl(v_data_x, y.v, n, r, s);
+			cudaFree(v_data_x);
 		}
 
-		void FAvgPooling(const LDG::Tensor& x, LDG::Tensor& y) {
-			const int n = x.shape()[1];
+		void DAvgPooling(const LDG::Tensor& gy, vector<LDG::PTensor>& vec_gx) {
+			const int n = vec_gx.size();
+			dtype** v_data_gx;
+			cudaMalloc((void **)&v_data_gx, sizeof(dtype*) * n);
+			for(int i = 0; i < n; i++)
+				cudaMemcpy(v_data_gx + i, &vec_gx[i]->v, sizeof(dtype*) ,cudaMemcpyHostToDevice);
+			const int gx_size = n * vec_gx[0]->shape().dims()[0];
+			const int gy_size = gy.shape().size();
+			Davgpooling_impl(gy.v, gy_size, gx_size, n, v_data_gx);
+
+			cudaFree(v_data_gx);
+		}
+
+		void FSumPooling(const vector<LDG::PTensor>& vec_x, LDG::Tensor& y) {
+			const int n = vec_x.size();
 			const int r = y.shape().size();
 			const int s = y.shape().lower_volume(1);
-			Favgpooling_impl(x.v, y.v, n, r, s);
+			dtype** v_data_x;
+			cudaMalloc((void **)&v_data_x, sizeof(dtype*) * n);
+			for(int i = 0; i < n; i++)
+				cudaMemcpy(v_data_x + i, &vec_x[i]->v, sizeof(dtype*) ,cudaMemcpyHostToDevice);
+			Fsumpooling_impl(v_data_x, y.v, n, r, s);
+			cudaFree(v_data_x);
+		}
+
+		void DSumPooling(const LDG::Tensor& gy, vector<LDG::PTensor>& vec_gx) {
+			const int n = vec_gx.size();
+			dtype** v_data_gx;
+			cudaMalloc((void **)&v_data_gx, sizeof(dtype*) * n);
+			for(int i = 0; i < n; i++)
+				cudaMemcpy(v_data_gx + i, &vec_gx[i]->v, sizeof(dtype*) ,cudaMemcpyHostToDevice);
+			const int gx_size = n * vec_gx[0]->shape().dims()[0];
+			const int gy_size = gy.shape().size();
+			Dsumpooling_impl(gy.v, gy_size, gx_size, v_data_gx);
+
+			cudaFree(v_data_gx);
 		}
 		
-		void FMaxPooling(const LDG::Tensor& x, LDG::Tensor& y, int* index) {
-			const int n = x.shape()[1];
+		void FMaxPooling(const vector<LDG::PTensor>& vec_x, LDG::Tensor& y, int* index) {
+			const int n = vec_x.size();
 			const int r = y.shape().size();
 			const int s = y.shape().lower_volume(1);
+			dtype** v_data_x;
+			cudaMalloc((void **)&v_data_x, sizeof(dtype*) * n);
+			for(int i = 0; i < n; i++)
+				cudaMemcpy(v_data_x + i, &vec_x[i]->v, sizeof(dtype*) ,cudaMemcpyHostToDevice);
+
 			int *gpu_index_data;
 			cudaMalloc((void **)&gpu_index_data, sizeof(int) * r);
-			Fmaxpooling_impl(x.v, y.v, n, r, s, gpu_index_data);
+			Fmaxpooling_impl(v_data_x, y.v, n, r, s, gpu_index_data);
 			cudaMemcpy(index, gpu_index_data, sizeof(int) * r, cudaMemcpyDeviceToHost);
+
+			cudaFree(v_data_x);
 			cudaFree(gpu_index_data);
 		}
 
-		void DMaxPooling(const LDG::Tensor& x, const LDG::Tensor& y, 
-				const LDG::Tensor& gy, LDG::Tensor& gx, int* index) {
-			const int dim0 = x.shape().dims()[0];
+		void DMaxPooling(const LDG::Tensor& gy, vector<LDG::PTensor>& vec_gx, int* index) {
+			const int n = vec_gx.size();
+			dtype** v_data_gx;
+			cudaMalloc((void **)&v_data_gx, sizeof(dtype*) * n);
+			for(int i = 0; i < n; i++)
+				cudaMemcpy(v_data_gx + i, &vec_gx[i]->v, sizeof(dtype*) ,cudaMemcpyHostToDevice);
+
+			const int dim0 = gy.shape().dims()[0];
 			int *gpu_index_data;
 			cudaMalloc((void **)&gpu_index_data, sizeof(int) * dim0);
 			cudaMemcpy(gpu_index_data, index, sizeof(int) * dim0, cudaMemcpyHostToDevice);
-			Dmaxpooling_impl(x.v, y.v, gy.v, gx.v, gpu_index_data, dim0);
+			Dmaxpooling_impl(gy.v, v_data_gx, gpu_index_data, dim0);
+
+			cudaFree(v_data_gx);
 			cudaFree(gpu_index_data);
 		}
 
-		void FMinPooling(const LDG::Tensor& x, LDG::Tensor& y, int* index) {
-			const int n = x.shape()[1];
+		void FMinPooling(const vector<LDG::PTensor>& vec_x, LDG::Tensor &y, int* index) {
+			const int n = vec_x.size();
 			const int r = y.shape().size();
 			const int s = y.shape().lower_volume(1);
+			dtype** v_data_x;
+			cudaMalloc((void **)&v_data_x, sizeof(dtype*) * n);
+			for(int i = 0; i < n; i++)
+				cudaMemcpy(v_data_x + i, &vec_x[i]->v, sizeof(dtype*) ,cudaMemcpyHostToDevice);
+
 			int *gpu_index_data;
 			cudaMalloc((void **)&gpu_index_data, sizeof(int) * r);
-			Fminpooling_impl(x.v, y.v, n, r, s, gpu_index_data);
+			Fminpooling_impl(v_data_x, y.v, n, r, s, gpu_index_data);
 			cudaMemcpy(index, gpu_index_data, sizeof(int) * r, cudaMemcpyDeviceToHost);
+
+			cudaFree(v_data_x);
 			cudaFree(gpu_index_data);
 		}
 
-		void DMinPooling(const LDG::Tensor& x, const LDG::Tensor& y, 
-				const LDG::Tensor& gy, LDG::Tensor& gx, int* index) {
-			const int dim0 = x.shape().dims()[0];
+		void DMinPooling(const LDG::Tensor& gy, vector<LDG::PTensor>& vec_gx, int* index) {
+			const int n = vec_gx.size();
+			dtype** v_data_gx;
+			cudaMalloc((void **)&v_data_gx, sizeof(dtype*) * n);
+			for(int i = 0; i < n; i++)
+				cudaMemcpy(v_data_gx + i, &vec_gx[i]->v, sizeof(dtype*) ,cudaMemcpyHostToDevice);
+
+			const int dim0 = gy.shape().dims()[0];
 			int *gpu_index_data;
 			cudaMalloc((void **)&gpu_index_data, sizeof(int) * dim0);
 			cudaMemcpy(gpu_index_data, index, sizeof(int) * dim0, cudaMemcpyHostToDevice);
-			Dminpooling_impl(x.v, y.v, gy.v, gx.v, gpu_index_data, dim0);
+			Dminpooling_impl(gy.v, v_data_gx, gpu_index_data, dim0);
+
+			cudaFree(v_data_gx);
 			cudaFree(gpu_index_data);
 		}
 };

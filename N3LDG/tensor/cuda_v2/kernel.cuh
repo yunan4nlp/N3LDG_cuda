@@ -42,16 +42,25 @@ void get_col_impl(const dtype* x, dtype* r, int dim0, int col, int size);
 
 void get_cols_impl(const dtype* x, dtype* r, int xdim0, int xdim1, int r_size, int* cols, int col_num);
 
+void FLookup_impl(const dtype* x, dtype** r, int xdim0, int xdim1, int r_size, int* cols, int col_num);
+
+void DLookup_impl(dtype* gx, dtype** loss, int gxdim0, int gxdim1, int l_size, int* cols, int col_num);
+
 void Fadd_col_impl(dtype* x, const dtype* y, int col, int dim0, int size);
 
-void Fsumpooling_impl(const dtype* x, dtype* y, int n, int r, int s);
 
-void Favgpooling_impl(const dtype* x, dtype* y, int n, int r, int s);
+void Favgpooling_impl(dtype** x, dtype* y, int n, int r, int s);
 
-void Fmaxpooling_impl(const dtype* x, dtype* y, int n, int r, int s, int* index);
+void Davgpooling_impl(const dtype* gy, int gy_size, int gx_size, int n, dtype** gx);
 
-void Dmaxpooling_impl(const dtype* x, const dtype* y, const dtype* gy, dtype* gx, int* index, int size);
+void Fsumpooling_impl(dtype** x, dtype* y, int n, int r, int s);
 
-void Fminpooling_impl(const dtype* x, dtype* y, int n, int r, int s, int* index);
+void Dsumpooling_impl(const dtype* gy, int gy_size, int gx_size, dtype** gx);
 
-void Dminpooling_impl(const dtype* x, const dtype* y, const dtype* gy, dtype* gx, int* index, int size);
+void Fmaxpooling_impl(dtype** x, dtype* y, int n, int r, int s, int* index);
+
+void Dmaxpooling_impl(const dtype* gy, dtype** gx, int* index, int dim);
+
+void Fminpooling_impl(dtype** x, dtype* y, int n, int r, int s, int* index);
+
+void Dminpooling_impl(const dtype* gy, dtype** gx, int* index, int dim);
