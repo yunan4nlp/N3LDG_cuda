@@ -330,20 +330,17 @@ class LookupExecute :public Execute {
 		inline void  forward() {
 			int count = batch.size();
 			//#pragma omp parallel for schedule(static,1)
-			int indexes[count];
-			for (int idx = 0; idx < count; idx++) {
-				LookupNode* ptr = (LookupNode*)batch[idx];
-				indexes[idx] = ptr->xid;
-			}
+			vector<int> vec_indexes(count);
 
-			vector<LDG::PTensor> vec_val;
+			vector<LDG::PTensor> vec_val(count);
 			for (int idx = 0; idx < count; idx++) {
 				LookupNode* ptr = (LookupNode*)batch[idx];
-				vec_val.push_back(&ptr->val);
+				vec_indexes[idx] = (ptr->xid);
+				vec_val[idx] = (&ptr->val);
 			}
 
 			LookupNode* ptr = (LookupNode*)batch[0];
-			device.FLookup(ptr->param->E.val, indexes, count, vec_val);
+			device.FLookup(ptr->param->E.val, vec_indexes, vec_val);
 
 			for (int idx = 0; idx < count; idx++) {
 				LookupNode* ptr = (LookupNode*)batch[idx];
@@ -361,18 +358,18 @@ class LookupExecute :public Execute {
 				//ptr->backward();
 			}
 			vector<LDG::PTensor> vec_loss;
-			int array_xid[count];
+			vector<int> vec_xid;
 			for (int idx = 0; idx < count; idx++) {
 				LookupNode* ptr = (LookupNode*)batch[idx];
 				if(ptr->xid == ptr->param->nUNKId || (ptr->xid >= 0 && ptr->param->bFineTune)) {
 					vec_loss.push_back(&ptr->loss);		
-					array_xid[idx] = ptr->xid;
+					vec_xid.push_back(ptr->xid);
 					ptr->param->E.indexers[ptr->xid] = true;
 				}
 			}
 			LookupNode* ptr = (LookupNode*)batch[0];
-
-			device.DLookup(ptr->param->E.grad, array_xid, count, vec_loss);
+			if(vec_xid.size() > 0)
+				device.DLookup(ptr->param->E.grad, vec_xid, vec_loss);
 		}
 };
 

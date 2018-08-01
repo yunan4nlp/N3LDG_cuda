@@ -89,8 +89,6 @@ class SparseParam : public BaseParam {
 		}
 
 		inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) {
-
-
 			device.to_cpu(grad, cpu_grad);
 			device.to_cpu(aux_square, cpu_aux_square);
 			device.to_cpu(val, cpu_val);
@@ -122,8 +120,6 @@ class SparseParam : public BaseParam {
 		}
 
 		inline void updateAdam(dtype belta1, dtype belta2, dtype alpha, dtype reg, dtype eps) {
-
-
 			device.to_cpu(grad, cpu_grad);
 			device.to_cpu(aux_square, cpu_aux_square);
 			device.to_cpu(aux_mean, cpu_aux_mean);

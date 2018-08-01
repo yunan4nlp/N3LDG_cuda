@@ -18,6 +18,7 @@
 #include <unordered_set>
 #include <float.h>
 #include <limits>
+#include <chrono>
 
 #include "NRMat.h"
 #include "Eigen/Dense"

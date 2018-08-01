@@ -12,7 +12,6 @@ __global__ void Fadd_kernel(const dtype* x, const dtype* y, dtype* r, int size) 
 
 void Fadd_impl(const dtype* x, const dtype* y, dtype* r, int size) {
 	Fadd_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, size);
-	cudaDeviceSynchronize();
 }
 
 __global__ void Fadd_kernel(const dtype* x, dtype** y, dtype* r, int count, int size) {
@@ -33,7 +32,7 @@ __global__ void Fadd_kernel(const dtype* x, dtype** y, dtype* r, int count, int 
 
 void Fadd_impl(const dtype* x, dtype** y, dtype* r, int count, int size) {
 	Fadd_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, count, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Fadd_kernel(dtype** x, dtype** y, dtype** r, int dim0, int size) {
@@ -47,7 +46,7 @@ __global__ void Fadd_kernel(dtype** x, dtype** y, dtype** r, int dim0, int size)
 
 void Fadd_impl(dtype** x, dtype** y,  dtype** r, int dim0, int size) {
 	Fadd_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, dim0, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Fsubtract_kernel(const dtype* x, const dtype* y, dtype* r, int size) {
@@ -59,7 +58,7 @@ __global__ void Fsubtract_kernel(const dtype* x, const dtype* y, dtype* r, int s
 
 void Fsubtract_impl(const dtype* x, const dtype* y, dtype* r, int size) {
 	Fsubtract_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Fmultiply_kernel(const dtype* x, const dtype* y, dtype* r, int size) {
@@ -71,7 +70,7 @@ __global__ void Fmultiply_kernel(const dtype* x, const dtype* y, dtype* r, int s
 
 void Fmultiply_impl(const dtype* x, const dtype* y, dtype* r, int size) {
 	Fmultiply_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Fmultiply_kernel(dtype** x, dtype** y, dtype** r, int dim0, int size) {
@@ -85,7 +84,7 @@ __global__ void Fmultiply_kernel(dtype** x, dtype** y, dtype** r, int dim0, int 
 
 void Fmultiply_impl(dtype** x, dtype** y, dtype** r, int dim0, int size) {
 	Fmultiply_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, dim0, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Fdivide_kernel(const dtype* x, const dtype* y, dtype* r, int size) {
@@ -97,7 +96,7 @@ __global__ void Fdivide_kernel(const dtype* x, const dtype* y, dtype* r, int siz
 
 void Fdivide_impl(const dtype* x, const dtype* y, dtype* r, int size) {
 	Fdivide_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Fmultiply_scalar_kernel(const dtype* x, const dtype y, dtype* r, int size) {
@@ -109,7 +108,7 @@ __global__ void Fmultiply_scalar_kernel(const dtype* x, const dtype y, dtype* r,
 
 void Fmultiply_scalar_impl(const dtype* x, const dtype y, dtype* r, int size) {
 	Fmultiply_scalar_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Fadd_scalar_kernel(const dtype* x, const dtype y, dtype* r, int size) {
@@ -121,7 +120,7 @@ __global__ void Fadd_scalar_kernel(const dtype* x, const dtype y, dtype* r, int 
 
 void Fadd_scalar_impl(const dtype* x, const dtype y, dtype* r, int size) {
 	Fadd_scalar_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Fsquare_kernel(const dtype* x, dtype* r, int size) {
@@ -133,7 +132,7 @@ __global__ void Fsquare_kernel(const dtype* x, dtype* r, int size) {
 
 void Fsquare_impl(const dtype* x, dtype* r, int size) {
 	Fsquare_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, r, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Ftanh_kernel(const dtype* x, dtype* r, int size) {
@@ -145,7 +144,7 @@ __global__ void Ftanh_kernel(const dtype* x, dtype* r, int size) {
 
 void Ftanh_impl(const dtype* x, dtype* r, int size) {
 	Ftanh_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, r, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Ftanh_kernel(dtype** x, dtype** r, int dim0, int size) {
@@ -159,7 +158,7 @@ __global__ void Ftanh_kernel(dtype** x, dtype** r, int dim0, int size) {
 
 void Ftanh_impl(dtype** x, dtype** r, int dim0, int size) {
 	Ftanh_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, r, dim0, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Fsigmoid_kernel(dtype** x, dtype** r, int dim0, int size) {
@@ -173,7 +172,7 @@ __global__ void Fsigmoid_kernel(dtype** x, dtype** r, int dim0, int size) {
 
 void Fsigmoid_impl(dtype** x, dtype** r, int dim0, int size) {
 	Fsigmoid_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, r, dim0, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Dsigmoid_kernel(dtype** x, dtype** y, dtype** r, int dim0, int size) {
@@ -187,7 +186,7 @@ __global__ void Dsigmoid_kernel(dtype** x, dtype** y, dtype** r, int dim0, int s
 
 void Dsigmoid_impl(dtype** x, dtype** y, dtype** r, int dim0, int size){
 	Dsigmoid_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, dim0, size);
-	cudaDeviceSynchronize();
+	
 }
 
 
@@ -200,7 +199,7 @@ __global__ void Dtanh_kernel(const dtype* x, const dtype* y, dtype* r, int size)
 
 void Dtanh_impl(const dtype* x, const dtype* y, dtype* r, int size) {
 	Dtanh_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Dtanh_kernel(dtype** x, dtype** y, dtype** r, int dim0, int size) {
@@ -214,7 +213,7 @@ __global__ void Dtanh_kernel(dtype** x, dtype** y, dtype** r, int dim0, int size
 
 void Dtanh_impl(dtype** x, dtype** y, dtype** r, int dim0, int size){
 	Dtanh_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, dim0, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Fsigmoid_kernel(const dtype* x, dtype* r, int size) {
@@ -226,7 +225,7 @@ __global__ void Fsigmoid_kernel(const dtype* x, dtype* r, int size) {
 
 void Fsigmoid_impl(const dtype* x, dtype* r, int size) {
 	Fsigmoid_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, r, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Dsigmoid_kernel(const dtype* x, const dtype* y, dtype* r, int size) {
@@ -238,7 +237,7 @@ __global__ void Dsigmoid_kernel(const dtype* x, const dtype* y, dtype* r, int si
 
 void Dsigmoid_impl(const dtype* x, const dtype* y, dtype* r, int size) {
 	Dsigmoid_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Fsqrt_kernel(const dtype* x, dtype* r, int size) {
@@ -250,7 +249,7 @@ __global__ void Fsqrt_kernel(const dtype* x, dtype* r, int size) {
 
 void Fsqrt_impl(const dtype* x, dtype* r, int size) {
 	Fsqrt_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, r, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void concat_kernel(const dtype *src, dtype* dst, int offset, int dim) {
@@ -262,7 +261,7 @@ __global__ void concat_kernel(const dtype *src, dtype* dst, int offset, int dim)
 
 void concat_impl(const dtype *src, dtype* dst, int offset, int dim) {
 	concat_kernel<<<(dim + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(src, dst, offset, dim);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void unconcat_kernel(const dtype *src, dtype* dst, int offset, int dim) {
@@ -274,7 +273,7 @@ __global__ void unconcat_kernel(const dtype *src, dtype* dst, int offset, int di
 
 void unconcat_impl(const dtype *src, dtype* dst, int offset, int dim) {
 	unconcat_kernel<<<(dim + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(src, dst, offset, dim);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Ftranspose_kernel(const dtype* x, dtype* r, int dim0, int dim1, int size) {
@@ -286,7 +285,7 @@ __global__ void Ftranspose_kernel(const dtype* x, dtype* r, int dim0, int dim1, 
 
 void Ftranspose_impl(const dtype* x, dtype* r, int dim0, int dim1, int size) {
 	Ftranspose_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, r, dim0, dim1, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void set_col_kernel(dtype* x, int dim0, int col, int size, dtype val) {
@@ -299,7 +298,7 @@ __global__ void set_col_kernel(dtype* x, int dim0, int col, int size, dtype val)
 
 void set_col_impl(dtype* x, int dim0, int col, int size, dtype val) {
 	set_col_kernel<<<(dim0 + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, dim0, col, size, val);
-	cudaDeviceSynchronize();
+	
 }
 
 
@@ -374,7 +373,7 @@ __global__ void get_col_kernel(const dtype* x, dtype* r, int dim0, int col, int 
 
 void get_col_impl(const dtype* x, dtype* r, int dim0, int col, int size) {
 	get_col_kernel<<<(dim0 + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, r, dim0, col, size);
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Fadd_col_kernel(dtype* x, const dtype* y, int col, int dim0, int size){
@@ -387,7 +386,7 @@ __global__ void Fadd_col_kernel(dtype* x, const dtype* y, int col, int dim0, int
 
 void Fadd_col_impl(dtype* x, const dtype* y, int col, int dim0, int size) {
 	Fadd_col_kernel<<<(dim0 + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, col, dim0, size);
-	cudaDeviceSynchronize();
+	
 }
 
 
@@ -445,7 +444,7 @@ void Favgpooling_impl(dtype** x, dtype* y, int n, int r, int s) {
 				CASE(1);
 #undef CASE
 	}
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Davgpooling_kernel(const dtype* gy, int gy_size, int gx_size, int n, dtype** gx) {
@@ -460,7 +459,7 @@ __global__ void Davgpooling_kernel(const dtype* gy, int gy_size, int gx_size, in
 
 void Davgpooling_impl(const dtype* gy, int gy_size, int gx_size, int n, dtype** gx) {
 	Davgpooling_kernel<<<(gx_size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(gy, gy_size, gx_size, n, gx);
-	cudaDeviceSynchronize();
+	
 }
 
 template<int BLOCK_SIZE>
@@ -518,7 +517,7 @@ void Fsumpooling_impl(dtype** x, dtype* y, int n, int r, int s) {
 				CASE(1);
 #undef CASE
 	}
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Dsumpooling_kernel(const dtype* gy, int gy_size, int gx_size, dtype** gx) {
@@ -533,7 +532,7 @@ __global__ void Dsumpooling_kernel(const dtype* gy, int gy_size, int gx_size, dt
 
 void Dsumpooling_impl(const dtype* gy, int gy_size, int gx_size, dtype** gx) {
 	Dsumpooling_kernel<<<(gx_size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(gy, gy_size, gx_size, gx);
-	cudaDeviceSynchronize();
+	
 }
 
 template<int BLOCK_SIZE>
@@ -598,7 +597,7 @@ void Fmaxpooling_impl(dtype** x, dtype* y, int n, int r, int s, int* index){
 				CASE(1);
 #undef CASE
 	}
-	cudaDeviceSynchronize();
+	
 }
 
 __global__ void Dmaxpooling_kernel(const dtype* gy, dtype** gx, int* index, int dim) {
@@ -614,7 +613,7 @@ __global__ void Dmaxpooling_kernel(const dtype* gy, dtype** gx, int* index, int 
 
 void Dmaxpooling_impl(const dtype* gy, dtype** gx, int* index, int dim) {
 	Dmaxpooling_kernel<<<(dim + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(gy, gx, index, dim);
-	cudaDeviceSynchronize();
+	
 }
 
 template<int BLOCK_SIZE>
@@ -693,5 +692,5 @@ __global__ void Dminpooling_kernel(const dtype* gy, dtype** gx, int* index, int 
 
 void Dminpooling_impl(const dtype* gy, dtype** gx, int* index, int dim) {
 	Dminpooling_kernel<<<(dim + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(gy, gx, index, dim);
-	cudaDeviceSynchronize();
+	
 }

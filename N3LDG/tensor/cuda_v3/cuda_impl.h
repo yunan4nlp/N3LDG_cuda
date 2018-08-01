@@ -4,37 +4,41 @@
 #include "Device.h"
 #include "MyLib.h"
 #include "kernel.cuh"
+#include "memory_pool.h"
 #include <iostream>
 #include <iomanip>
 #include <chrono>
+
+static void *my_alloc(std::size_t size) {
+	void *ptr;
+	cudaMalloc((void **)&ptr, size);
+	return ptr;
+}
+
+static void my_delete(void *ptr) {
+	cudaFree(ptr);
+}
 
 
 class CudaDevice : public Device {
 	private:
 		cublasHandle_t handle;
 
+		MemoryPool *mem_pool;
 	public:
 
 	public:
 		CudaDevice() {
 			Device::device_type = CUDA;
 			cublasCreate(&handle);
+			mem_pool = new MemoryPool(my_alloc, my_delete);
 		}
 
+		~CudaDevice() {
+			delete mem_pool;
+		}
 
 	public:
-		void show_val(const LDG::Tensor &t) {
-			int size = t.shape().size();
-			dtype host_data[size];
-			int memsize = sizeof(dtype) * size;
-			cudaMemcpy(host_data, t.v, memsize, cudaMemcpyDeviceToHost);
-
-			for (int i = 0; i < size; i++) {
-				std::cout << setprecision(10) << host_data[i] << " ,";
-			}
-			std::cout << endl;
-		}
-
 		void init(LDG::Tensor &t, const Shape &shape) {
 			malloc(t, shape);
 			zero(t);
@@ -74,6 +78,8 @@ class CudaDevice : public Device {
 			int size = shape.size();
 			int memsize = sizeof(dtype) * size;
 			cudaMalloc((void **)&t.v, memsize);
+
+			t.handle_ = mem_pool->allocate(memsize);
 		}
 
 		void zero(LDG::Tensor &t) {
@@ -206,17 +212,18 @@ class CudaDevice : public Device {
 		}
 
 		void random_uniform(LDG::Tensor &t, const Shape &shape, float lower, float upper) {
-			t.shape_ = shape;
 			int size = shape.size();
+			int memsize = sizeof(dtype) * size;
 			dtype *host_data = new dtype[size];
 			dtype min = lower, max = upper;
 			for (int i = 0; i < size; i++) {
 				host_data[i] = (dtype(rand()) / RAND_MAX) * (max - min) + min;
 			}
-			int memsize = sizeof(dtype) * size;
-			t.device_type = CUDA;
-			cudaMalloc((void **)&t.v, memsize);
+
+			malloc(t, shape);
 			cudaMemcpy(t.v, host_data, memsize, cudaMemcpyHostToDevice);
+
+			cudaMemcpy(MDATA(t), host_data, memsize, cudaMemcpyHostToDevice);
 			delete []host_data;
 		} 
 
@@ -417,8 +424,9 @@ class CudaDevice : public Device {
 			int y_size = y.shape().size();
 			LDG::Tensor r;
 			if(x_size == y_size) {
-				init(r, x.shape());
-				Fadd_impl(x.v, y.v, r.v, x_size);
+				malloc(r, x.shape());
+				//Fadd_impl(x.v, y.v, r.v, x_size);
+				Fadd_impl(CDATA(x), CDATA(y), MDATA(r), x_size);
 			}
 			else
 				std::cout << "error, add dim is not match" << std::endl;
@@ -430,7 +438,9 @@ class CudaDevice : public Device {
 			int y_size = y.shape().size();
 			int r_size = r.shape().size();
 			if(x_size == y_size && x_size == r_size)
+			{
 				Fadd_impl(x.v, y.v, r.v, x_size);
+			}
 			else
 				std::cout << "error, add dim is not match" << std::endl;
 		}
@@ -903,6 +913,26 @@ class CudaDevice : public Device {
 
 			cudaFree(v_data_gx);
 			cudaFree(gpu_index_data);
+		}
+
+		void copy_tensor(const LDG::Tensor &src, LDG::Tensor& dst) {
+			malloc(dst, src.shape());
+			cudaMemcpyAsync(
+					MDATA(dst),
+				   	CDATA(src), 
+					sizeof(dtype) * src.shape().size(), 
+					cudaMemcpyDeviceToDevice, 0);
+		}
+
+		vector<dtype> to_vector(const LDG::Tensor& x) {
+			const std::uint32_t size = x.shape().size();
+			vector<dtype> ret(size);
+			cudaMemcpy(
+					ret.data(), 
+					CDATA(x), 
+					sizeof(dtype) * size, 
+					cudaMemcpyDeviceToHost);
+			return ret;
 		}
 };
 
