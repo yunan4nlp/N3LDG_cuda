@@ -83,120 +83,55 @@ class TanhNode :public Node {
 };
 
 class TanhExecute :public Execute {
-  public:
-	  LDG::Tensor x, y;
-	  int sumDim;
-	  bool bTrain;
+	public:
+		vector<LDG::PTensor> vec_x, vec_val;
+		bool bTrain;
 
-  public:
-    ~TanhExecute() {
-        sumDim = 0;
-    }
-
-  public:
-    inline void  forward() {
-        int count = batch.size();
-
-        sumDim = 0;
-        for (int idx = 0; idx < count; idx++) {
-            sumDim += batch[idx]->dim;
-        }
-
-        device.init(x, Shape({sumDim, 1}));
-        device.init(y, Shape({sumDim, 1}));
-
-		vector<LDG::PTensor> vec_x;
-        for (int idx = 0; idx < count; idx++) {
-            TanhNode* ptr = (TanhNode*)batch[idx];
-			vec_x.push_back(&ptr->in->val);
-		}
-		device.concat(vec_x, x);
-
-		/*
-        int offset = 0;
-        for (int idx = 0; idx < count; idx++) {
-            TanhNode* ptr = (TanhNode*)batch[idx];
-            for (int idy = 0; idy < ptr->dim; idy++) {
-                x[offset + idy] = ptr->in->val[idy];
-            }
-            offset += ptr->dim;
-        }
-		*/
-
-		device.unaryExp(x, y, &device, &Device::Ftanh);
-        //y.vec() = x.vec().unaryExpr(ptr_fun(ftanh));
-
-
-		vector<LDG::PTensor> vec_val;
-        for (int idx = 0; idx < count; idx++) {
-            TanhNode* ptr = (TanhNode*)batch[idx];
-			vec_val.push_back(&ptr->val);
-		}
-		device.unconcat(y, vec_val);
-
-        for (int idx = 0; idx < count; idx++) {
-            TanhNode* ptr = (TanhNode*)batch[idx];
-            ptr->forward_drop(bTrain);
-        }
-    }
-
-
-    inline void backward() {
-		LDG::Tensor lx, ly;
-		device.init(lx, Shape({sumDim, 1}));
-		device.init(ly, Shape({sumDim, 1}));
-
-        //Tensor1D lx, ly;
-        //lx.init(sumDim);
-        //ly.init(sumDim);
-
-        int count = batch.size();
-		for (int idx = 0; idx < count; idx++) {
-			TanhNode* ptr = (TanhNode*)batch[idx];
-			ptr->backward_drop();
+	public:
+		~TanhExecute() {
 		}
 
-		vector<LDG::PTensor> vec_loss;
-		for (int idx = 0; idx < count; idx++) {
-			TanhNode* ptr = (TanhNode*)batch[idx];
-			vec_loss.push_back(&ptr->loss);
-		}
-		device.concat(vec_loss, ly);
-            //for (int idy = 0; idy < ptr->dim; idy++) {
-                //ly[offset + idy] = ptr->loss[idy];
-            //}
-            //offset += ptr->dim;
+	public:
+		inline void  forward() {
+			int count = batch.size();
 
-		LDG::Tensor dy;
-		device.init(dy, y.shape());
-		device.binaryExp(x, y, dy, &device, &Device::Dtanh);
-		device.Fmultiply(ly, dy, lx);
-        //lx.vec() = ly.vec() * x.vec().binaryExpr(y.vec(), ptr_fun(dtanh));
+			vec_x.clear();
+		   	vec_val.clear();
+			for (int idx = 0; idx < count; idx++) {
+				TanhNode* ptr = (TanhNode*)batch[idx];
+				vec_x.push_back(&ptr->in->val);
+				vec_val.push_back(&ptr->val);
+			}
 
-		LDG::Tensor array_lx[count];
-		vector<LDG::PTensor> vec_lx;
-        for (int idx = 0; idx < count; idx++) {
-            TanhNode* ptr = (TanhNode*)batch[idx];
-			device.init(array_lx[idx], ptr->in->loss.shape());
-			vec_lx.push_back(&array_lx[idx]);
-		}
-		device.unconcat(lx, vec_lx);
+			device.unaryExp(vec_x, vec_val, &device, &Device::Ftanh);
 
-        for (int idx = 0; idx < count; idx++) {
-            TanhNode* ptr = (TanhNode*)batch[idx];
-			device.Fadd(ptr->in->loss, *vec_lx[idx], ptr->in->loss);
+			for (int idx = 0; idx < count; idx++) {
+				TanhNode* ptr = (TanhNode*)batch[idx];
+				ptr->forward_drop(bTrain);
+			}
 		}
-/*
-        offset = 0;
-        for (int idx = 0; idx < count; idx++) {
-            TanhNode* ptr = (TanhNode*)batch[idx];
-            for (int idy = 0; idy < ptr->dim; idy++) {
-                ptr->in->loss[idy] += lx[offset + idy];
-            }
-            offset += ptr->dim;
-        }
- */
-    }
+
+
+		inline void backward() {
+			int count = batch.size();
+			vector<LDG::PTensor> vec_loss, vec_in_loss;
+
+			LDG::Tensor array_lx[count];
+			vector<LDG::PTensor> vec_lx;
+			for (int idx = 0; idx < count; idx++) {
+				TanhNode* ptr = (TanhNode*)batch[idx];
+				ptr->backward_drop();
+				vec_loss.push_back(&ptr->loss);
+				vec_in_loss.push_back(&ptr->in->loss);
+
+				device.init(array_lx[idx], ptr->in->loss.shape());
+				vec_lx.push_back(&array_lx[idx]);
+			}
+
+			device.binaryExp(vec_x, vec_val, vec_lx, &device, &Device::Dtanh);
+			device.Fmultiply(vec_loss, vec_lx, vec_lx);
+			device.Fadd(vec_in_loss, vec_lx, vec_in_loss);
+		}
 };
 
 inline PExecute TanhNode::generate(bool bTrain) {

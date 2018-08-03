@@ -102,43 +102,25 @@ class MaxPoolNode : public PoolNode {
     //Another point is that we change the input vectors directly.
     inline void compute() {
         int nSize = ins.size();
-		LDG::Tensor in_x;
-		device.init(in_x, Shape({dim, nSize}));
+		//LDG::Tensor in_x;
+		//device.init(in_x, Shape({dim, nSize}));
 		vector<LDG::PTensor> vec_ins;
         for (int i = 0; i < nSize; ++i) {
 			vec_ins.push_back(&ins[i]->val);
 		}
-		device.concat(vec_ins, in_x);
-		device.FMaxPooling(in_x, val, index);
+		//device.concat(vec_ins, in_x);
+		device.FMaxPooling(vec_ins, val, index);
     }
 
     inline void backward() {
         int nSize = ins.size();
 
-		LDG::Tensor in_x;
-		device.init(in_x, Shape({dim, nSize}));
-		vector<LDG::PTensor> vec_ins;
-        for (int i = 0; i < nSize; ++i) {
-			vec_ins.push_back(&ins[i]->val);
-		}
-		device.concat(vec_ins, in_x);
-
-		LDG::Tensor in_loss;
-		device.init(in_loss, Shape({dim, nSize}));
-
-		device.DMaxPooling(in_x, val, loss, in_loss, index);
-		LDG::Tensor array_in_loss[nSize];
 		vector<LDG::PTensor> vec_in_loss;
         for (int i = 0; i < nSize; i++) {
-			device.init(array_in_loss[i], Shape({dim, 1}));
-			vec_in_loss.push_back(&array_in_loss[i]);
+			vec_in_loss.push_back(&ins[i]->loss);
 		}
-		device.unconcat(in_loss, vec_in_loss);
 
-        for (int i = 0; i < nSize; i++) {
-			device.Fadd(ins[i]->loss, *vec_in_loss[i], ins[i]->loss);
-            //ins[i]->loss.vec() += loss.vec() * masks[i].vec();
-        }
+		device.DMaxPooling(loss, vec_in_loss, index);
 
     }
 
@@ -155,26 +137,22 @@ class AvgPoolNode : public PoolNode {
 		//Another point is that we change the input vectors directly.
 		inline void compute() {
 			int nSize = ins.size();
-			LDG::Tensor in_x;
-			device.init(in_x, Shape({dim, nSize}));
+
 			vector<LDG::PTensor> vec_ins;
 			for (int i = 0; i < nSize; ++i) {
 				vec_ins.push_back(&ins[i]->val);
 			}
-			device.concat(vec_ins, in_x);
-			device.FAvgPooling(in_x, val);
+
+			device.FAvgPooling(vec_ins, val);
 		}
 
 		inline void backward() {
 			int nSize = ins.size();
-			LDG::Tensor p_loss;
-			device.init(p_loss, loss.shape());
-			dtype scalar = (dtype) 1 / nSize;
-			device.Fmultiply_scalar(loss, scalar, p_loss);
+			vector<LDG::PTensor> vec_ins_loss;
 			for (int i = 0; i < nSize; i++) {
-				device.Fadd(ins[i]->loss, p_loss, ins[i]->loss);
-				//ins[i]->loss.vec() += loss.vec() * masks[i].vec();
+				vec_ins_loss.push_back(&ins[i]->loss);
 			}
+			device.DAvgPooling(loss, vec_ins_loss);
 		}
 };
 
@@ -189,22 +167,20 @@ class SumPoolNode : public PoolNode {
     //Another point is that we change the input vectors directly.
     inline void compute() {
         int nSize = ins.size();
-		LDG::Tensor in_x;
-		device.init(in_x, Shape({dim, nSize}));
 		vector<LDG::PTensor> vec_ins;
         for (int i = 0; i < nSize; ++i) {
 			vec_ins.push_back(&ins[i]->val);
 		}
-		device.concat(vec_ins, in_x);
-		device.FSumPooling(in_x, val);
+		device.FSumPooling(vec_ins, val);
     }
 
     inline void backward() {
         int nSize = ins.size();
+		vector<LDG::PTensor> vec_ins_loss;
         for (int i = 0; i < nSize; i++) {
-			device.Fadd(ins[i]->loss, loss, ins[i]->loss);
-            //ins[i]->loss.vec() += loss.vec() * masks[i].vec();
+			vec_ins_loss.push_back(&ins[i]->loss);
         }
+		device.DSumPooling(loss, vec_ins_loss);
     }
 };
 
@@ -229,43 +205,24 @@ class MinPoolNode : public PoolNode {
 
     inline void compute() {
         int nSize = ins.size();
-		LDG::Tensor in_x;
-		device.init(in_x, Shape({dim, nSize}));
+
 		vector<LDG::PTensor> vec_ins;
         for (int i = 0; i < nSize; ++i) {
 			vec_ins.push_back(&ins[i]->val);
 		}
-		device.concat(vec_ins, in_x);
-		device.FMinPooling(in_x, val, index);
+
+		device.FMinPooling(vec_ins, val, index);
     }
 
     inline void backward() {
         int nSize = ins.size();
 
-		LDG::Tensor in_x;
-		device.init(in_x, Shape({dim, nSize}));
-		vector<LDG::PTensor> vec_ins;
-        for (int i = 0; i < nSize; ++i) {
-			vec_ins.push_back(&ins[i]->val);
-		}
-		device.concat(vec_ins, in_x);
-
-		LDG::Tensor in_loss;
-		device.init(in_loss, Shape({dim, nSize}));
-
-		device.DMinPooling(in_x, val, loss, in_loss, index);
-		LDG::Tensor array_in_loss[nSize];
 		vector<LDG::PTensor> vec_in_loss;
         for (int i = 0; i < nSize; i++) {
-			device.init(array_in_loss[i], Shape({dim, 1}));
-			vec_in_loss.push_back(&array_in_loss[i]);
+			vec_in_loss.push_back(&ins[i]->loss);
 		}
-		device.unconcat(in_loss, vec_in_loss);
 
-        for (int i = 0; i < nSize; i++) {
-			device.Fadd(ins[i]->loss, *vec_in_loss[i], ins[i]->loss);
-            //ins[i]->loss.vec() += loss.vec() * masks[i].vec();
-        }
+		device.DMinPooling(loss, vec_in_loss, index);
 
     }
 };

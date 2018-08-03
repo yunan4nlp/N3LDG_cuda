@@ -6,17 +6,20 @@
 #include "kernel.cuh"
 #include <iostream>
 #include <iomanip>
+#include <chrono>
 
 
 class CudaDevice : public Device {
 	private:
 		cublasHandle_t handle;
+		double sum;
 
 	public:
 
 	public:
 		CudaDevice() {
 			Device::device_type = CUDA;
+			sum = 0;
 			cublasCreate(&handle);
 		}
 
@@ -112,6 +115,22 @@ class CudaDevice : public Device {
 				cout << "get col dims are not matched" << endl;
 		}
 
+		void get_cols(const LDG::Tensor& x, int* cols, int col_num, LDG::Tensor& r) {
+			int *gpu_cols;
+			int memsize = sizeof(int) * col_num;
+			cudaMalloc((void **)&gpu_cols, memsize);
+			cudaMemcpy(gpu_cols, cols, memsize, cudaMemcpyHostToDevice);
+
+			int xdim0 = x.shape().dims()[0];
+			int xdim1 = x.shape().dims()[1];
+			int r_size = r.shape().size();
+
+			if(xdim0 == r.shape().dims()[0]) {
+				get_cols_impl(x.v, r.v, xdim0, xdim1, r_size, gpu_cols, col_num);
+			} else
+				cout << "get col dims are not matched" << endl;
+			cudaFree(gpu_cols);
+		}
 
 		void random_uniform(LDG::Tensor &t, const Shape &shape, float lower, float upper) {
 			t.device_type = CUDA;
@@ -385,6 +404,7 @@ class CudaDevice : public Device {
 		}
 
 		void to_cpu(const LDG::Tensor &gpu_tensor, LDG::Tensor &cpu_tensor) {
+			auto t_start = std::chrono::high_resolution_clock::now();
 			if (gpu_tensor.device_type == CUDA && cpu_tensor.device_type == CPU) {
 				if(gpu_tensor.shape().has_same_dims(cpu_tensor.shape())) {
 					int memsize = gpu_tensor.shape().size() * sizeof(dtype);
@@ -397,6 +417,10 @@ class CudaDevice : public Device {
 			} else {
 				cout << "to_cpu tensor type is error" << endl;
 			}
+			auto t_end = std::chrono::high_resolution_clock::now();
+			double t = std::chrono::duration<double>(t_end - t_start).count();
+			sum += t;
+			cout << "time: " << t  << ", sum: "<< sum << endl;
 		}
 
 		void to_gpu(const LDG::Tensor &cpu_tensor, LDG::Tensor &gpu_tensor) {
