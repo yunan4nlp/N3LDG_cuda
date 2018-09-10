@@ -293,8 +293,7 @@ class CudaDevice : public Device {
 				std::cout << "error the number of Fsigmoid tensors is not matched "<<endl;
 		}
 
-		void Dsigmoid(const vector<LDG::PTensor>& vec_x, const vector<LDG::PTensor>& vec_y, vector<LDG::PTensor>& vec_r) {
-			const int n_x = vec_x.size();
+		void Dsigmoid(const vector<LDG::PTensor>& vec_x, const vector<LDG::PTensor>& vec_y, vector<LDG::PTensor>& vec_r) { const int n_x = vec_x.size();
 			const int n_y = vec_y.size();
 			const int n_r = vec_r.size();
 			if(n_x == n_r && n_y == n_r) {
