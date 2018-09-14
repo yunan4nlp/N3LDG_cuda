@@ -1,0 +1,18 @@
+
+outBest = .greedy-small
+maxInstance = -1
+verboseIter = 1000
+dropProb = 0.25
+adaAlpha = 0.001
+delta = 0
+beam = 0
+charEmbFile = /home/yunan/nnsegpos/emb/char.vec
+bicharEmbFile = /home/yunan/nnsegpos/emb/bichar.vec
+#wordEmbFile = /users1/mszhang/AAAI2018-JointST/emb/ngram.vec
+startBeam = 10000
+batchSize = 16
+tagEmbSize = 100
+charHiddenSize = 200
+wordHiddenSize = 200
+charRNNHiddenSize = 200
+wordRNNHiddenSize = 200

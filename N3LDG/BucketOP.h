@@ -10,12 +10,12 @@
 *      Author: mszhang
 */
 
-#include "Eigen/Dense"
+//#include "Eigen/Dense"
 #include "MyLib.h"
 #include "Node.h"
 #include "Graph.h"
 
-using namespace Eigen;
+//using namespace Eigen;
 
 
 
@@ -25,16 +25,18 @@ class BucketNode : public Node {
         node_type = "bucket";
     }
   public:
+	/*
     virtual inline void clearValue() {
         //Node::clearValue();
-        device.zero(loss);
+        DEV->zero(loss);
         //loss = 0;
         degree = 0;
         if (drop_value > 0)
-			device.set(drop_mask, 1);
+			DEV->set(drop_mask, 1);
 			//drop_mask = 1;
         parents.clear();
     }
+	*/
 
     virtual inline void init(int ndim, dtype dropout) {
         Node::init(ndim, -1);
@@ -42,8 +44,8 @@ class BucketNode : public Node {
 
   public:
     void forward(Graph *cg, dtype value) {
-        device.set(val, value);
-        device.zero(loss);
+        //DEV->set(val, value);
+        //DEV->zero(loss);
        	// val = value;
         //loss = 0;
         degree = 0;
@@ -52,7 +54,7 @@ class BucketNode : public Node {
 
     //value already assigned
     void forward(Graph *cg) {
-        device.zero(loss);
+        //DEV->zero(loss);
         //loss = 0;
         degree = 0;
         cg->addNode(this);
@@ -102,21 +104,25 @@ class BucketExecute : public Execute {
     bool bTrain;
   public:
     inline void  forward() {
+		/*
         int count = batch.size();
 //#pragma omp parallel for schedule(static,1)
         for (int idx = 0; idx < count; idx++) {
             BucketNode* ptr = (BucketNode*)batch[idx];
             ptr->forward_drop(bTrain);
         }
+		*/
     }
 
     inline void backward() {
+		/*
         int count = batch.size();
 //#pragma omp parallel for schedule(static,1)
         for (int idx = 0; idx < count; idx++) {
             BucketNode* ptr = (BucketNode*)batch[idx];
             ptr->backward_drop();
         }
+		*/
     }
 };
 

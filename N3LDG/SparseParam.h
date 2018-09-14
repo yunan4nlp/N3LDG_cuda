@@ -14,46 +14,57 @@
 // The in-out dimension definiation is different with dense parameters.
 class SparseParam : public BaseParam {
 	public:
-		LDG::Tensor aux_square;
-		LDG::Tensor aux_mean;
+		//LDG::Tensor aux_square;
+		//LDG::Tensor aux_mean;
 		NRVec<bool> indexers;
 		NRVec<int> last_update;
 
+		vector<dtype> cpu_grad, cpu_aux_square, cpu_aux_mean, cpu_val;
 
-		LDG::Tensor cpu_grad;
-		LDG::Tensor cpu_aux_square;
-		LDG::Tensor cpu_val;
 
-		LDG::Tensor cpu_aux_mean;
+		//LDG::Tensor cpu_grad;
+		//LDG::Tensor cpu_aux_square;
+		//LDG::Tensor cpu_val;
+
+		//LDG::Tensor cpu_aux_mean;
 
 		// allow sparse and dense parameters have different parameter initialization methods
 		inline void initial(int outDim, int inDim) {
 			//not in the aligned memory pool
 			//val.init(outDim, inDim);
 			dtype bound = sqrt(3.0 / (outDim));
-			device.random_uniform(val, Shape({outDim, inDim}), -bound, bound);
-			device.init(grad, Shape({outDim, inDim}));
-			device.init(aux_square, Shape({outDim, inDim}));
-			device.init(aux_mean, Shape({outDim, inDim}));
+			DEV->random_uniform(val, Shape({outDim, inDim}), -bound, bound);
+			DEV->init(grad, Shape({outDim, inDim}));
+			//DEV->init(aux_square, Shape({outDim, inDim}));
+			//DEV->init(aux_mean, Shape({outDim, inDim}));
 
+			int size = outDim * inDim;
+			cpu_aux_square.resize(size);
+			cpu_aux_mean.resize(size);
+			for(int idx = 0; idx < size; idx++) {
+				cpu_aux_square[idx] = 0;
+				cpu_aux_mean[idx] = 0;
+			}
 
-			cpu_grad.device_type = CPU;	
-			cpu_aux_square.device_type = CPU;	
-			cpu_val.device_type = CPU;	
+			/*
+			   cpu_grad.device_type = CPU;	
+			   cpu_aux_square.device_type = CPU;	
+			   cpu_val.device_type = CPU;	
 
-			cpu_grad.shape_ = grad.shape();
-			cpu_aux_square.shape_ = aux_square.shape();
-			cpu_val.shape_ = val.shape();
+			   cpu_grad.shape_ = grad.shape();
+			   cpu_aux_square.shape_ = aux_square.shape();
+			   cpu_val.shape_ = val.shape();
 
-			cpu_grad.v = new dtype[grad.shape().size()];
-			cpu_aux_square.v = new dtype[aux_square.shape().size()];
-			cpu_val.v = new dtype[val.shape().size()];
+			   cpu_grad.v = new dtype[grad.shape().size()];
+			   cpu_aux_square.v = new dtype[aux_square.shape().size()];
+			   cpu_val.v = new dtype[val.shape().size()];
 
-			cpu_aux_mean.device_type = CPU;
+			   cpu_aux_mean.device_type = CPU;
 
-			cpu_aux_mean.shape_ = aux_mean.shape();
+			   cpu_aux_mean.shape_ = aux_mean.shape();
 
-			cpu_aux_mean.v = new dtype[aux_mean.shape().size()];
+			   cpu_aux_mean.v = new dtype[aux_mean.shape().size()];
+			 */
 			//val.random(bound);
 			//grad.init(outDim, inDim);
 			//aux_square.init(outDim, inDim);
@@ -68,13 +79,14 @@ class SparseParam : public BaseParam {
 			int inDim = indexers.size();
 			for (int index = 0; index < inDim; index++) {
 				if (!indexers[index]) continue;
-				device.set_col(grad, index, 0);
+				DEV->set_col(grad, index, 0);
 				/*
 				   for (int idx = 0; idx < grad.row; idx++) {
 				   grad[index][idx] = 0;
 				   }
 				 */
 			}
+
 			indexers = false;
 		}
 
@@ -89,23 +101,50 @@ class SparseParam : public BaseParam {
 		}
 
 		inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) {
-			device.to_cpu(grad, cpu_grad);
-			device.to_cpu(aux_square, cpu_aux_square);
-			device.to_cpu(val, cpu_val);
-
+			vector<int> id;
 			int inDim = indexers.size();
+			for (int index = 0; index < inDim; index++) {
+				if (!indexers[index]) continue;
+				id.push_back(index);
+			}
+
+			vector<dtype> g = DEV->to_vector(grad, id);
+			vector<dtype> v = DEV->to_vector(val, id);
 			int row = grad.shape().dims()[0];
+			int offset = 0;
+
 			for (int index = 0; index < inDim; index++) {
 				if (!indexers[index]) continue;
 				for (int idx = 0; idx < row; idx++) {
-					cpu_grad.v[index * row + idx] = cpu_grad.v[index * row + idx] + cpu_val.v[index * row + idx] * reg;
-					cpu_aux_square.v[index * row + idx] = cpu_aux_square.v[index * row + idx] + cpu_grad.v[index * row + idx] * cpu_grad.v[index * row + idx];
-					cpu_val.v[index * row + idx] = cpu_val.v[index * row + idx] - cpu_grad.v[index * row + idx] * alpha / sqrt(cpu_aux_square.v[index * row + idx] + eps);
+					g[offset * row + idx] = g[offset * row + idx] + v[offset * row + idx] * reg;
+					cpu_aux_square[index * row + idx] = cpu_aux_square[index * row + idx] + g[offset * row + idx] * g[offset * row + idx];
+					v[offset * row + idx] = v[offset * row + idx] - g[offset * row + idx] * alpha / sqrt(cpu_aux_square[index * row + idx] + eps);
 				}
+				offset++;
 			}
-			device.set(grad, cpu_grad.v, grad.shape().size());
-			device.set(aux_square, cpu_aux_square.v, aux_square.shape().size());
-			device.set(val, cpu_val.v, val.shape().size());
+
+			DEV->set_cols(grad, id, g);
+			DEV->set_cols(val, id, v);
+
+
+			/*
+			   vector<dtype> cpu_grad = DEV->to_vector(grad);
+			//vector<dtype> cpu_aux_square = DEV->to_vector(aux_square);
+			vector<dtype> cpu_val = DEV->to_vector(val);
+
+			int row = grad.shape().dims()[0];
+			for (int index = 0; index < inDim; index++) {
+			if (!indexers[index]) continue;
+			for (int idx = 0; idx < row; idx++) {
+			cpu_grad[index * row + idx] = cpu_grad[index * row + idx] + cpu_val[index * row + idx] * reg;
+			cpu_aux_square[index * row + idx] = cpu_aux_square[index * row + idx] + cpu_grad[index * row + idx] * cpu_grad[index * row + idx];
+			cpu_val[index * row + idx] = cpu_val[index * row + idx] - cpu_grad[index * row + idx] * alpha / sqrt(cpu_aux_square[index * row + idx] + eps);
+			}
+			}
+			DEV->set(grad, cpu_grad);
+			//DEV->set(aux_square, cpu_aux_square);
+			DEV->set(val, cpu_val);
+			 */
 			/*
 			   int inDim = indexers.size();
 			   for (int index = 0; index < inDim; index++) {
@@ -120,29 +159,60 @@ class SparseParam : public BaseParam {
 		}
 
 		inline void updateAdam(dtype belta1, dtype belta2, dtype alpha, dtype reg, dtype eps) {
-			device.to_cpu(grad, cpu_grad);
-			device.to_cpu(aux_square, cpu_aux_square);
-			device.to_cpu(aux_mean, cpu_aux_mean);
-			device.to_cpu(val, cpu_val);
+
+			vector<int> id;
+			int inDim = indexers.size();
+			for (int index = 0; index < inDim; index++) {
+				if (!indexers[index]) continue;
+				id.push_back(index);
+			}
+
+			vector<dtype> g = DEV->to_vector(grad, id);
+			vector<dtype> v = DEV->to_vector(val, id);
 
 			dtype lr_t;
-			int inDim = indexers.size();
 			int row = grad.shape().dims()[0];
+			int offset = 0;
 			for (int index = 0; index < inDim; index++) {
 				if (!indexers[index]) continue;
 				for (int idx = 0; idx < row; idx++) {
-					cpu_grad.v[index * row + idx] = cpu_grad.v[index * row + idx] + cpu_val.v[index * row + idx] * reg;
-					cpu_aux_mean.v[index * row + idx] = belta1 * cpu_aux_mean.v[index * row + idx] + (1 - belta1) * cpu_grad.v[index * row + idx];
-					cpu_aux_square.v[index * row + idx] = belta2 * cpu_aux_square.v[index * row + idx] + (1 - belta2) * cpu_grad.v[index * row + idx] * cpu_grad.v[index * row + idx];
+					g[offset * row + idx] = g[offset * row + idx] + v[offset * row + idx] * reg;
+					cpu_aux_mean[index * row + idx] = belta1 * cpu_aux_mean[index * row + idx] + (1 - belta1) * g[offset * row + idx];
+					cpu_aux_square[index * row + idx] = belta2 * cpu_aux_square[index * row + idx] + (1 - belta2) * g[offset * row + idx] * g[offset * row + idx];
 					lr_t = alpha * sqrt(1 - pow(belta2, last_update[index] + 1)) / (1 - pow(belta1, last_update[index] + 1));
-					cpu_val.v[index * row + idx] = cpu_val.v[index * row + idx] - cpu_aux_mean.v[index * row + idx] * lr_t / sqrt(cpu_aux_square.v[index * row + idx] + eps);
+					v[offset * row + idx] = v[offset * row + idx] - cpu_aux_mean[index * row + idx] * lr_t / sqrt(cpu_aux_square[index * row + idx] + eps);
 				}
+				offset++;
 				last_update[index]++;
 			}
-			device.set(grad, cpu_grad.v, grad.shape().size());
-			device.set(aux_square, cpu_aux_square.v, aux_square.shape().size());
-			device.set(aux_mean, cpu_aux_mean.v, aux_mean.shape().size());
-			device.set(val, cpu_val.v, val.shape().size());
+
+			DEV->set_cols(grad, id, g);
+			DEV->set_cols(val, id, v);
+			/*
+			   cpu_grad = DEV->to_vector(grad);
+			//cpu_aux_square = DEV->to_vector(aux_square);
+			//cpu_aux_mean = DEV->to_vector(aux_mean);
+			cpu_val = DEV->to_vector(val);
+
+			dtype lr_t;
+			//int inDim = indexers.size();
+			int row = grad.shape().dims()[0];
+			for (int index = 0; index < inDim; index++) {
+			if (!indexers[index]) continue;
+			for (int idx = 0; idx < row; idx++) {
+			cpu_grad[index * row + idx] = cpu_grad[index * row + idx] + cpu_val[index * row + idx] * reg;
+			cpu_aux_mean[index * row + idx] = belta1 * cpu_aux_mean[index * row + idx] + (1 - belta1) * cpu_grad[index * row + idx];
+			cpu_aux_square[index * row + idx] = belta2 * cpu_aux_square[index * row + idx] + (1 - belta2) * cpu_grad[index * row + idx] * cpu_grad[index * row + idx];
+			lr_t = alpha * sqrt(1 - pow(belta2, last_update[index] + 1)) / (1 - pow(belta1, last_update[index] + 1));
+			cpu_val[index * row + idx] = cpu_val[index * row + idx] - cpu_aux_mean[index * row + idx] * lr_t / sqrt(cpu_aux_square[index * row + idx] + eps);
+			}
+			last_update[index]++;
+			}
+			DEV->set(grad, cpu_grad);
+			//DEV->set(aux_square, cpu_aux_square);
+			//DEV->set(aux_mean, cpu_aux_mean);
+			DEV->set(val, cpu_val);
+			 */
 
 			/*
 			   dtype lr_t;
@@ -188,15 +258,17 @@ class SparseParam : public BaseParam {
 		inline dtype squareGradNorm() {
 			dtype sumNorm = 0.0;
 
-			device.to_cpu(grad, cpu_grad);
-			int row = grad.shape().dims()[0];
-
 			int inDim = indexers.size();
+			int row = grad.shape().dims()[0];
+			vector<int> id;
 			for (int index = 0; index < inDim; index++) {
 				if (!indexers[index]) continue;
-				for (int idx = 0; idx < row; idx++) {
-					sumNorm += cpu_grad.v[index * row + idx] * cpu_grad.v[index * row + idx];
-				}
+				id.push_back(index);
+			}
+			vector<dtype> g= DEV->to_vector(grad, id);
+			int size = g.size();
+			for(int idx = 0; idx < size; idx++) {
+				sumNorm += g[idx] * g[idx];
 			}
 
 			/*
@@ -213,19 +285,34 @@ class SparseParam : public BaseParam {
 		}
 
 		inline void rescaleGrad(dtype scale) {
-
-			device.to_cpu(grad, cpu_grad);
-			int row = grad.shape().dims()[0];
-
 			int inDim = indexers.size();
+			vector<int> id;
 			for (int index = 0; index < inDim; index++) {
 				if (!indexers[index]) continue;
-				for (int idx = 0; idx < row; idx++) {
-					cpu_grad.v[index * row + idx] = cpu_grad.v[index * row + idx] * scale;
-				}
+				id.push_back(index);
 			}
+			vector<dtype> cpu_grad = DEV->to_vector(grad, id);
+			int max_size = cpu_grad.size();
+			for(int idx = 0; idx < max_size; idx++) {
+				cpu_grad[idx] = cpu_grad[idx] * scale;
+			}
+			DEV->set_cols(grad, id, cpu_grad);
 
-			device.set(grad, cpu_grad.v, grad.shape().size());
+			/*
+			   vector<dtype> cpu_grad = DEV->to_vector(grad);
+			   int row = grad.shape().dims()[0];
+
+			   int inDim = indexers.size();
+			   for (int index = 0; index < inDim; index++) {
+			   if (!indexers[index]) continue;
+			   for (int idx = 0; idx < row; idx++) {
+			   cpu_grad[index * row + idx] = cpu_grad[index * row + idx] * scale;
+			   }
+			   }
+
+			   DEV->set(grad, cpu_grad);
+			 */
+
 			/*
 			   int inDim = indexers.size();
 			   for (int index = 0; index < inDim; index++) {
@@ -250,7 +337,7 @@ class SparseParam : public BaseParam {
 			   }
 			 */
 
-			device.get_col(val, featId, out);
+			DEV->get_col(val, featId, out);
 		}
 
 		//inline void value(const vector<int>& featIds, Tensor1D& out) {
@@ -278,7 +365,7 @@ class SparseParam : public BaseParam {
 				std::cout << "warning: loss dim not equal lookup param dim." << std::endl;
 			}
 			indexers[featId] = true;
-			device.Fadd_col(grad, loss, featId);
+			DEV->Fadd_col(grad, loss, featId);
 			/*
 			   if (loss.dim != val.row) {
 			   std::cout << "warning: loss dim not equal lookup param dim." << std::endl;

@@ -21,11 +21,11 @@
 #include <chrono>
 
 #include "NRMat.h"
-#include "Eigen/Dense"
+//#include "Eigen/Dense"
 
 using namespace nr;
 using namespace std;
-using namespace Eigen;
+//using namespace Eigen;
 
 #if USE_FLOAT
 typedef float dtype;

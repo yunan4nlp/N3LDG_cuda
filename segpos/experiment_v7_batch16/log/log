@@ -1,0 +1,193 @@
+
+instance num: 23401
+
+instance num: 2078
+
+instance num: 2795
+Creating Alphabet...
+Embedding char file vocabulary size: 5726
+fine tuned char vocabulary size: 3729
+Embedding bichar file vocabulary size: 556940
+fine tuned bichar vocabulary size: 91437
+1000 2000 3000 4000 5000 6000 7000 8000 9000 10000 11000 12000 13000 14000 15000 16000 17000 18000 19000 20000 21000 22000 23000 23401 
+word embedding dim is 200
+-UNKNOWN- not found, using averaged value to initialize.
+OOV num is 0, total num is 5726, embedding oov ratio is 0
+unknown id5725
+word embedding dim is 200
+-UNKNOWN- not found, using averaged value to initialize.
+OOV num is 0, total num is 556940, embedding oov ratio is 0
+unknown id556939
+show hyper parameters
+maxlength = 513
+beam = 0
+delta = 0
+action_num = 35
+nnRegular = 1e-08
+adaAlpha = 0.001
+adaEps = 1e-06
+dropProb = 0.25
+batch = 16
+char_dim = 200
+char_tune = 1
+bichar_dim = 200
+bichar_tune = 1
+chartype_dim = 20
+char_concat_dim = 820
+char_hidden_dim = 200
+char_lstm_dim = 200
+length_dim = 20
+tag_dim = 100
+word_concat_dim = 520
+word_represent_dim = 200
+word_lstm_dim = 200
+state_feat_dim = 600
+state_hidden_dim = 200
+
+state size: 8504
+action node size: 8216
+state size: 8504
+action node size: 8216
+state size: 8504
+action node size: 8216
+state size: 8504
+action node size: 8216
+state size: 8504
+action node size: 8216
+state size: 8504
+action node size: 8216
+state size: 8504
+action node size: 8216
+state size: 8504
+action node size: 8216
+state size: 8504
+action node size: 8216
+state size: 8504
+action node size: 8216
+state size: 8504
+action node size: 8216
+state size: 8504
+action node size: 8216
+state size: 8504
+action node size: 8216
+state size: 8504
+action node size: 8216
+state size: 8504
+action node size: 8216
+state size: 8504
+action node size: 8216
+1000 2000 3000 4000 5000 6000 7000 8000 9000 10000 11000 12000 13000 14000 15000 16000 17000 18000 19000 20000 21000 22000 23000 maxIter = 1463000
+
+show options
+wordCutOff = 3
+featCutOff = 0
+charCutOff = 1
+bicharCutOff = 1
+initRange = 0.01
+maxIter = 1000
+batchSize = 16
+adaEps = 1e-06
+adaAlpha = 0.001
+regParameter = 1e-08
+dropProb = 0.25
+delta = 0
+clip = -1
+rpRatio = 0.05
+beam = 0
+wordStateSize = 200
+charStateSize = 200
+stateHiddenSize = 200
+startBeam = 10000
+wordEmbSize = 200
+lengthEmbSize = 20
+wordNgram = 2
+wordHiddenSize = 200
+wordRNNHiddenSize = 200
+wordEmbFineTune = 1
+wordEmbNormalize = 0
+wordEmbFile = 
+charEmbSize = 200
+charTypeEmbSize = 200
+bicharEmbSize = 200
+charcontext = 2
+charHiddenSize = 200
+charRNNHiddenSize = 200
+charEmbFineTune = 1
+charEmbNormalize = 0
+bicharEmbFineTune = 1
+bicharEmbNormalize = 0
+charEmbFile = /home/yunan/nnsegpos/emb/char.vec
+bicharEmbFile = /home/yunan/nnsegpos/emb/bichar.vec
+ngramEmbFile = 
+wordFile = 
+tagEmbSize = 100
+ngramEmbSize = 2
+tagStateSize = 100
+tagRNNHiddenSize = 100
+actionEmbSize = 20
+actionNgram = 2
+actionStateSize = 30
+actionRNNHiddenSize = 20
+verboseIter = 1000
+saveItermediate = 1
+train = 0
+maxInstance = -1
+outBest = .greedy-small
+base = 1
+
+show hyper parameters
+maxlength = 513
+beam = 0
+delta = 0
+action_num = 35
+nnRegular = 1e-08
+adaAlpha = 0.001
+adaEps = 1e-06
+dropProb = 0.25
+batch = 16
+char_dim = 200
+char_tune = 1
+bichar_dim = 200
+bichar_tune = 1
+chartype_dim = 20
+char_concat_dim = 820
+char_hidden_dim = 200
+char_lstm_dim = 200
+length_dim = 20
+tag_dim = 100
+word_concat_dim = 520
+word_represent_dim = 200
+word_lstm_dim = 200
+state_feat_dim = 600
+state_hidden_dim = 200
+
+##### Iteration 0
+current: 1000, Cost = 179.188, Correct(%) = 0.867672, time = 452.429
+current: 1, Correct(%) = 0.888826, time = 665.885
+Dev start.
+Dev finished. Total time taken is: 25.0532
+dev:
+Recall:	P=56676/59929=0.945719, Accuracy:	P=56676/59796=0.947823, Fmeasure:	0.94677
+Recall:	P=53327/59929=0.889836, Accuracy:	P=53327/59796=0.891816, Fmeasure:	0.890825
+Test start.
+Test finished. Total time taken is: 33.2643
+test:
+Recall:	P=76689/81579=0.940058, Accuracy:	P=76689/81203=0.944411, Fmeasure:	0.942229
+Recall:	P=72013/81579=0.882739, Accuracy:	P=72013/81203=0.886827, Fmeasure:	0.884778
+Exceeds best previous DIS of -1. Saving model file..
+##### Iteration 1
+current: 1000, Cost = 85.4598, Correct(%) = 0.944326, time = 459.478
+current: 2, Correct(%) = 0.946763, time = 675.74
+Dev start.
+Dev finished. Total time taken is: 25.2699
+dev:
+Recall:	P=57292/59929=0.955998, Accuracy:	P=57292/60104=0.953214, Fmeasure:	0.954604
+Recall:	P=54386/59929=0.907507, Accuracy:	P=54386/60104=0.904865, Fmeasure:	0.906184
+Test start.
+Test finished. Total time taken is: 33.5266
+test:
+Recall:	P=77482/81579=0.949779, Accuracy:	P=77482/81542=0.95021, Fmeasure:	0.949994
+Recall:	P=73501/81579=0.900979, Accuracy:	P=73501/81542=0.901388, Fmeasure:	0.901184
+Exceeds best previous DIS of 0.890825. Saving model file..
+##### Iteration 2
+current: 1000, Cost = 90.8434, Correct(%) = 0.955014, time = 464.255

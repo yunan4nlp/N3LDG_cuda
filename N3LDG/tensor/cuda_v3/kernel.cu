@@ -14,16 +14,27 @@ void Fadd_impl(const dtype* x, const dtype* y, dtype* r, int size) {
 	Fadd_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, size);
 }
 
+__global__ void Fadd_inplace_kernel(dtype* x, const dtype* y, int size) {
+	int index = threadIdx.x + blockIdx.x * blockDim.x;
+	if(index < size) {
+		x[index] += y[index];
+	}
+}
+
+void Fadd_inplace_impl(dtype * x, const dtype *y, int size) {
+	Fadd_inplace_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, size);
+}
+
 __global__ void Fadd_kernel(const dtype* x, dtype** y, dtype* r, int count, int size) {
 	int index = threadIdx.x + blockIdx.x * blockDim.x;
 	if(index < size) {
-		dtype sum = 0;
+		dtype sum = x[index];
 		int offset = 0;
 		for(int idx = 0; idx < count; idx++) {	
 			int global = index + offset;
 			int idx = global / size;
 			int idy = global % size;
-			sum += (x[index] + y[idx][idy]);
+			sum += y[idx][idy];
 			offset += size;
 		}
 		r[index] = sum;
@@ -46,7 +57,39 @@ __global__ void Fadd_kernel(dtype** x, dtype** y, dtype** r, int dim0, int size)
 
 void Fadd_impl(dtype** x, dtype** y,  dtype** r, int dim0, int size) {
 	Fadd_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, dim0, size);
-	
+}
+
+__global__ void Fadd_inplace_kernel(dtype** x, dtype** y, int dim0, int size) {
+	int index = threadIdx.x + blockIdx.x * blockDim.x;
+	if(index < size) {
+		int idx = index / dim0;
+		int idy = index % dim0;
+		x[idx][idy] += y[idx][idy];
+	}
+}
+
+void Fadd_inplace_impl(dtype** x, dtype** y, int dim0, int size) {
+	Fadd_inplace_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, dim0, size);
+}
+
+__global__ void Fadd_inplace_kernel(dtype* x, dtype** y, int count, int size) {
+	int index = threadIdx.x + blockIdx.x * blockDim.x;
+	if(index < size) {
+		dtype sum = x[index];
+		int offset = 0;
+		for(int idx = 0; idx < count; idx++) {	
+			int global = index + offset;
+			int idx = global / size;
+			int idy = global % size;
+			sum += y[idx][idy];
+			offset += size;
+		}
+		x[index] = sum;
+	}
+}
+
+void Fadd_inplace_impl(dtype* x, dtype** y, int count, int size) {
+	Fadd_inplace_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, count, size);
 }
 
 __global__ void Fsubtract_kernel(const dtype* x, const dtype* y, dtype* r, int size) {
@@ -58,7 +101,17 @@ __global__ void Fsubtract_kernel(const dtype* x, const dtype* y, dtype* r, int s
 
 void Fsubtract_impl(const dtype* x, const dtype* y, dtype* r, int size) {
 	Fsubtract_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, size);
-	
+}
+
+__global__ void Fsubtract_inplace_kernel(dtype* x, const dtype* y, int size) {
+	int index = threadIdx.x + blockIdx.x * blockDim.x;
+	if(index < size) {
+		x[index] -= y[index];
+	}
+}
+
+void Fsubtract_inplace_impl(dtype* x, const dtype* y, int size) {
+	Fsubtract_inplace_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, size);
 }
 
 __global__ void Fmultiply_kernel(const dtype* x, const dtype* y, dtype* r, int size) {
@@ -70,8 +123,19 @@ __global__ void Fmultiply_kernel(const dtype* x, const dtype* y, dtype* r, int s
 
 void Fmultiply_impl(const dtype* x, const dtype* y, dtype* r, int size) {
 	Fmultiply_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, size);
-	
 }
+
+__global__ void Fmultiply_inplace_kernel(dtype* x, const dtype* y, int size) {
+	int index = threadIdx.x + blockIdx.x * blockDim.x;
+	if(index < size) {
+		x[index] *= y[index];
+	}
+}
+
+void Fmultiply_inplace_impl(dtype* x, const dtype* y, int size) {
+	Fmultiply_inplace_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, size);
+}
+
 
 __global__ void Fmultiply_kernel(dtype** x, dtype** y, dtype** r, int dim0, int size) {
 	int index = threadIdx.x + blockIdx.x * blockDim.x;
@@ -85,6 +149,19 @@ __global__ void Fmultiply_kernel(dtype** x, dtype** y, dtype** r, int dim0, int 
 void Fmultiply_impl(dtype** x, dtype** y, dtype** r, int dim0, int size) {
 	Fmultiply_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, dim0, size);
 	
+}
+
+__global__ void Fmultiply_inplace_kernel(dtype** x, dtype** y, int dim0, int size) {
+	int index = threadIdx.x + blockIdx.x * blockDim.x;
+	if(index < size) {
+		int idx = index / dim0;
+		int idy = index % dim0;
+		x[idx][idy] *= y[idx][idy];
+	}
+}
+
+void Fmultiply_inplace_impl(dtype** x, dtype** y, int dim0, int size) {
+	Fmultiply_inplace_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, dim0, size);
 }
 
 __global__ void Fdivide_kernel(const dtype* x, const dtype* y, dtype* r, int size) {
@@ -111,6 +188,28 @@ void Fmultiply_scalar_impl(const dtype* x, const dtype y, dtype* r, int size) {
 	
 }
 
+__global__ void Fmultiply_scalar_kernel(const dtype* x, const dtype* scalar, dtype* r, int size) {
+	int index = threadIdx.x + blockIdx.x * blockDim.x;
+	if(index < size) {
+		r[index] = x[index] * scalar[0];
+	}
+}
+
+void Fmultiply_scalar_impl(const dtype* x, const dtype* scalar, dtype* r, int size) {
+	Fmultiply_scalar_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, scalar, r, size);
+}
+
+__global__ void Fmultiply_scalar_inplace_kernel(dtype* x, const dtype y, int size) {
+	int index = threadIdx.x + blockIdx.x * blockDim.x;
+	if(index < size) {
+		x[index] *= y;
+	}
+}
+
+void Fmultiply_scalar_inplace_impl(dtype* x, const dtype y, int size) {
+	Fmultiply_scalar_inplace_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, size);
+}
+
 __global__ void Fadd_scalar_kernel(const dtype* x, const dtype y, dtype* r, int size) {
 	int index = threadIdx.x + blockIdx.x * blockDim.x;
 	if(index < size) {
@@ -120,8 +219,19 @@ __global__ void Fadd_scalar_kernel(const dtype* x, const dtype y, dtype* r, int 
 
 void Fadd_scalar_impl(const dtype* x, const dtype y, dtype* r, int size) {
 	Fadd_scalar_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, size);
-	
 }
+
+__global__ void Fadd_scalar_inplace_kernel(dtype* x, const dtype y, int size) {
+	int index = threadIdx.x + blockIdx.x * blockDim.x;
+	if(index < size) {
+		x[index] += y;
+	}
+}
+
+void Fadd_scalar_inplace_impl(dtype* x, const dtype y, int size) {
+	Fadd_scalar_inplace_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, size);
+}
+
 
 __global__ void Fsquare_kernel(const dtype* x, dtype* r, int size) {
 	int index = threadIdx.x + blockIdx.x * blockDim.x;
@@ -158,7 +268,6 @@ __global__ void Ftanh_kernel(dtype** x, dtype** r, int dim0, int size) {
 
 void Ftanh_impl(dtype** x, dtype** r, int dim0, int size) {
 	Ftanh_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, r, dim0, size);
-	
 }
 
 __global__ void Fsigmoid_kernel(dtype** x, dtype** r, int dim0, int size) {
@@ -172,7 +281,6 @@ __global__ void Fsigmoid_kernel(dtype** x, dtype** r, int dim0, int size) {
 
 void Fsigmoid_impl(dtype** x, dtype** r, int dim0, int size) {
 	Fsigmoid_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, r, dim0, size);
-	
 }
 
 __global__ void Dsigmoid_kernel(dtype** x, dtype** y, dtype** r, int dim0, int size) {
@@ -186,7 +294,6 @@ __global__ void Dsigmoid_kernel(dtype** x, dtype** y, dtype** r, int dim0, int s
 
 void Dsigmoid_impl(dtype** x, dtype** y, dtype** r, int dim0, int size){
 	Dsigmoid_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, dim0, size);
-	
 }
 
 
@@ -199,7 +306,6 @@ __global__ void Dtanh_kernel(const dtype* x, const dtype* y, dtype* r, int size)
 
 void Dtanh_impl(const dtype* x, const dtype* y, dtype* r, int size) {
 	Dtanh_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(x, y, r, size);
-	
 }
 
 __global__ void Dtanh_kernel(dtype** x, dtype** y, dtype** r, int dim0, int size) {
@@ -261,7 +367,19 @@ __global__ void concat_kernel(const dtype *src, dtype* dst, int offset, int dim)
 
 void concat_impl(const dtype *src, dtype* dst, int offset, int dim) {
 	concat_kernel<<<(dim + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(src, dst, offset, dim);
-	
+}
+
+__global__ void concat_kernel(dtype **src, dtype* dst, int dim, int size) {
+	int index = threadIdx.x + blockIdx.x * blockDim.x;
+	if(index < size) {
+		int idx = index / dim;
+		int idy = index % dim;
+		dst[index] = src[idx][idy];
+	}
+}
+
+void concat_impl(dtype **src, dtype* dst, int dim, int size) {
+	concat_kernel<<<(size + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(src, dst, dim, size);
 }
 
 __global__ void unconcat_kernel(const dtype *src, dtype* dst, int offset, int dim) {
@@ -347,6 +465,7 @@ __global__ void get_cols_kernel(const dtype* x, dtype* r, int xdim0, int xdim1, 
 	int index = threadIdx.x + blockIdx.x * blockDim.x;
 	if(index < r_size) {
 		int col_index = index / xdim0;
+
 		if(col_index < col_num) {
 			int col = cols[col_index];
 			int offset = index % xdim0;

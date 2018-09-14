@@ -1,0 +1,14 @@
+
+outBest = .debug
+maxInstance = -1
+maxIter = 100
+batchSize = 16
+adaAlpha = 0.001
+cnnLayerSize = 10
+hiddenSize = 200
+wordEmbSize = 200
+verboseIter = 100
+dropProb = -1
+wordEmbFineTune = true
+wordcontext = 2
+#wordFile = /home/yunan/gpu_NN/experiment/emb/wiki.zh.vec

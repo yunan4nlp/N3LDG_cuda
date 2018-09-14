@@ -14,6 +14,7 @@
 #include "LookupTable.h"
 #include "Param.h"
 #include "SparseParam.h"
+#include "DropOP.h"
 //#include "APParam.h"
 #include "ModelUpdate.h"
 #include "CheckGrad.h"

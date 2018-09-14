@@ -10,11 +10,11 @@
 */
 
 
-#include "Eigen/Dense"
+//#include "Eigen/Dense"
 #include "Node.h"
 #include "MyLib.h"
 
-using namespace Eigen;
+//using namespace Eigen;
 
 
 // one Node means a vector
@@ -58,9 +58,19 @@ class Graph {
         execs.clear();
 
         count = nodes.size();
+		vector<LDG::PTensor> vec_val, vec_loss;
         for (int idx = 0; idx < count; idx++) {
             nodes[idx]->clearValue();
+			if(nodes[idx]->node_type != "bucket")
+				vec_val.push_back(&nodes[idx]->val);
+			vec_loss.push_back(&nodes[idx]->loss);
+			//if(nodes[idx]->drop_value > 0)
+				//vec_drop_mask.push_back(&nodes[idx]->drop_mask);
         }
+		DEV->set(vec_val, 0);
+		if(bTrain)
+			DEV->set(vec_loss, 0);
+		//DEV->set(vec_drop_mask, 1);
         nodes.clear();
         free_nodes.clear();
         finish_nodes.clear();

@@ -84,17 +84,16 @@ class PoolNode : public Node {
 
 class MaxPoolNode : public PoolNode {
   public:
-	int* index;
+	IndexPtr index;
     MaxPoolNode() : PoolNode() {
         node_type = "max-pooling";
     }
 
     void init(int ndim, dtype dropout) {
 		Node::init(ndim, dropout);
-		index = new int[ndim];
+		DEV->init_index_ptr(index, ndim);
 	}
 	~MaxPoolNode(){
-		delete []index;
 	}
 
   public:
@@ -103,13 +102,13 @@ class MaxPoolNode : public PoolNode {
     inline void compute() {
         int nSize = ins.size();
 		//LDG::Tensor in_x;
-		//device.init(in_x, Shape({dim, nSize}));
+		//DEV->init(in_x, Shape({dim, nSize}));
 		vector<LDG::PTensor> vec_ins;
         for (int i = 0; i < nSize; ++i) {
 			vec_ins.push_back(&ins[i]->val);
 		}
-		//device.concat(vec_ins, in_x);
-		device.FMaxPooling(vec_ins, val, index);
+		//DEV->concat(vec_ins, in_x);
+		DEV->FMaxPooling(vec_ins, val, index.get_ptr());
     }
 
     inline void backward() {
@@ -120,7 +119,7 @@ class MaxPoolNode : public PoolNode {
 			vec_in_loss.push_back(&ins[i]->loss);
 		}
 
-		device.DMaxPooling(loss, vec_in_loss, index);
+		DEV->DMaxPooling(loss, vec_in_loss, index.get_ptr());
 
     }
 
@@ -143,7 +142,7 @@ class AvgPoolNode : public PoolNode {
 				vec_ins.push_back(&ins[i]->val);
 			}
 
-			device.FAvgPooling(vec_ins, val);
+			DEV->FAvgPooling(vec_ins, val);
 		}
 
 		inline void backward() {
@@ -152,7 +151,7 @@ class AvgPoolNode : public PoolNode {
 			for (int i = 0; i < nSize; i++) {
 				vec_ins_loss.push_back(&ins[i]->loss);
 			}
-			device.DAvgPooling(loss, vec_ins_loss);
+			DEV->DAvgPooling(loss, vec_ins_loss);
 		}
 };
 
@@ -171,7 +170,7 @@ class SumPoolNode : public PoolNode {
         for (int i = 0; i < nSize; ++i) {
 			vec_ins.push_back(&ins[i]->val);
 		}
-		device.FSumPooling(vec_ins, val);
+		DEV->FSumPooling(vec_ins, val);
     }
 
     inline void backward() {
@@ -180,23 +179,23 @@ class SumPoolNode : public PoolNode {
         for (int i = 0; i < nSize; i++) {
 			vec_ins_loss.push_back(&ins[i]->loss);
         }
-		device.DSumPooling(loss, vec_ins_loss);
+		DEV->DSumPooling(loss, vec_ins_loss);
     }
 };
 
 class MinPoolNode : public PoolNode {
   public:
-	int* index;
+	IndexPtr index;
+
     MinPoolNode() : PoolNode() {
         node_type = "min-pooling";
     }
 
     void init(int ndim, dtype dropout) {
 		Node::init(ndim, dropout);
-		index = new int[ndim];
+		DEV->init_index_ptr(index, ndim);
 	}
 	~MinPoolNode(){
-		delete []index;
 	}
 
   public:
@@ -211,7 +210,7 @@ class MinPoolNode : public PoolNode {
 			vec_ins.push_back(&ins[i]->val);
 		}
 
-		device.FMinPooling(vec_ins, val, index);
+		DEV->FMinPooling(vec_ins, val, index.get_ptr());
     }
 
     inline void backward() {
@@ -222,7 +221,7 @@ class MinPoolNode : public PoolNode {
 			vec_in_loss.push_back(&ins[i]->loss);
 		}
 
-		device.DMinPooling(loss, vec_in_loss, index);
+		DEV->DMinPooling(loss, vec_in_loss, index.get_ptr());
 
     }
 };
@@ -263,23 +262,45 @@ class MinPoolNode : public PoolNode {
 class PoolExecute : public Execute {
   public:
     bool bTrain;
+	vector<LDG::PTensor> vec_val;
+	vector<LDG::PTensor> vec_loss;
   public:
     inline void  forward() {
         int count = batch.size();
 //#pragma omp parallel for schedule(static,1)
+		PoolNode* ptr = (PoolNode*)batch[0];
+		drop_value = ptr->drop_value;
+		vec_val.resize(count);
         for (int idx = 0; idx < count; idx++) {
             PoolNode* ptr = (PoolNode*)batch[idx];
+			vec_val[idx] = (&ptr->val);
             ptr->compute();
-            ptr->forward_drop(bTrain);
+			ptr->degree = -1;
+            //ptr->forward_drop(bTrain);
         }
+
+		if(drop_value > 0) {
+			if(bTrain)
+				DEV->Fdropout(vec_val, drop_value, mask, vec_val);
+			else
+				DEV->Fdropout(vec_val, drop_value, vec_val);
+		}
     }
 
     inline void backward() {
         int count = batch.size();
 //#pragma omp parallel for schedule(static,1)
+		vec_loss.resize(count);
         for (int idx = 0; idx < count; idx++) {
             PoolNode* ptr = (PoolNode*)batch[idx];
-            ptr->backward_drop();
+			vec_loss[idx] = (&ptr->loss);
+		}
+		if (drop_value > 0) {
+			DEV->Ddropout(vec_loss, mask);
+		}
+        for (int idx = 0; idx < count; idx++) {
+            PoolNode* ptr = (PoolNode*)batch[idx];
+            //ptr->backward_drop();
             ptr->backward();
         }
     }

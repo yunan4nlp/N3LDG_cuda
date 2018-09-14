@@ -22,7 +22,7 @@
 */
 class Shape {
 public:
-	static const std::uint32_t MAX_DEPTH = 8;
+	static const int MAX_DEPTH = 8;
 
 	Shape(const Shape &) = default;
 	Shape(Shape &&) = default;
@@ -39,59 +39,59 @@ public:
 	* @param dims List of the dimension sizes.
 	* @param batch Batch size.
 	*/
-	Shape(std::initializer_list<std::uint32_t> dims, std::uint32_t batch = 1);
+	Shape(std::initializer_list<int> dims, int batch = 1);
 
 	/**
 	* Creates a new Shape object.
 	* @param dims List of the dimension sizes.
 	* @param batch Batch size.
 	*/
-	Shape(const std::vector<std::uint32_t> &dims, std::uint32_t batch = 1);
+	Shape(const std::vector<int> &dims, int batch = 1);
 
 	/**
 	* Returns the size of the i-th dimension.
 	* @param i Dimension number to check.
 	* @return Size of the i-th dimension.
 	*/
-	std::uint32_t operator[](std::uint32_t i) const;
+	int operator[](int i) const;
 
 	/**
 	* Returns the dimension array.
 	* @return Copy of the dimension array.
 	*/
-	const std::vector<std::uint32_t> dims() const;
+	const std::vector<int> dims() const;
 	/**
 	* Returns the depth (length of non-1 dimensions) of the shape.
 	* @return The depth of the shape.
 	*/
-	std::uint32_t depth() const;
+	int depth() const;
 
 	/**
 	* Returns the batch size.
 	* @return Batch size.
 	*/
-	std::uint32_t batch() const;
+	int batch() const;
 
 	/**
 	* Returns the number of elements in each sample.
 	* This value is equal to the product of all dimensions.
 	* @return Number of elements.
 	*/
-	std::uint32_t volume() const;
+	int volume() const;
 
 	/**
 	* Returns the number of elements in 1 to specified dim.
 	* @param dim Upper bound of the dimension.
 	* @return `dims[0] * dims[1] * ... * dims[dim-1]`
 	*/
-	std::uint32_t lower_volume(std::uint32_t dim) const;
+	int lower_volume(int dim) const;
 
 	/**
 	* Returns the number of elements in all samples of the mini-batch.
 	* This value is equal to `batch() * volume()`.
 	* @return Number of elements.
 	*/
-	std::uint32_t size() const;
+	int size() const;
 
 	/**
 	* Returns a string representation of the shape.
@@ -160,7 +160,7 @@ public:
 	* @return true if both shape have same dimensions regardless the dimension
 	*         `dim`, false otherwise.
 	*/
-	bool has_same_loo_dims(const Shape &rhs, std::uint32_t dim) const;
+	bool has_same_loo_dims(const Shape &rhs, int dim) const;
 
 	/**
 	* Creates a new shape which have one different dimension.
@@ -168,43 +168,43 @@ public:
 	* @param m New size of the dimension `dim`.
 	* @return New shape.
 	*/
-	Shape resize_dim(std::uint32_t dim, std::uint32_t m) const;
+	Shape resize_dim(int dim, int m) const;
 
 	/**
 	* Creates a new shape which have specified batch size.
 	* @param batch New batch size.
 	* @return New shape.
 	*/
-	Shape resize_batch(std::uint32_t batch) const;
+	Shape resize_batch(int batch) const;
 
 	/**
 	* Directly updates a specified dimension.
 	* @param dim Dimension to be updated.
 	* @param m New size of the dimension `dim`.
 	*/
-	void update_dim(std::uint32_t dim, std::uint32_t m);
+	void update_dim(int dim, int m);
 
 	/**
 	* Directly updates the batch size.
 	* @param batch New batch size.
 	*/
-	void update_batch(std::uint32_t batch);
+	void update_batch(int batch);
 
 private:
-	std::array<std::uint32_t, MAX_DEPTH> dims_;
-	std::uint32_t depth_;
-	std::uint32_t batch_;
-	std::uint32_t volume_;
+	std::array<int, MAX_DEPTH> dims_;
+	int depth_;
+	int batch_;
+	int volume_;
 };
 
-Shape::Shape(std::initializer_list<std::uint32_t> dims, std::uint32_t batch)
+Shape::Shape(std::initializer_list<int> dims, int batch)
 	: depth_(0), batch_(batch), volume_(1) {
 	if (dims.size() > MAX_DEPTH) {
 		PRIMITIV_THROW_ERROR(
 			"Exceeds dimension depth limit at Shape::Shape()."
 			" depth: " << depth_ << " > MAX_DEPTH: " << MAX_DEPTH);
 	}
-	for (const std::uint32_t d : dims) {
+	for (const int d : dims) {
 		dims_[depth_++] = d;
 		volume_ *= d;
 	}
@@ -214,14 +214,14 @@ Shape::Shape(std::initializer_list<std::uint32_t> dims, std::uint32_t batch)
 	}
 }
 
-Shape::Shape(const std::vector<std::uint32_t> &dims, std::uint32_t batch)
+Shape::Shape(const std::vector<int> &dims, int batch)
 	: depth_(0), batch_(batch), volume_(1) {
 	if (dims.size() > MAX_DEPTH) {
 		PRIMITIV_THROW_ERROR(
 			"Exceeds dimension depth limit at Shape::Shape()."
 			" depth: " << depth_ << " > MAX_DEPTH: " << MAX_DEPTH);
 	}
-	for (const std::uint32_t d : dims) {
+	for (const int d : dims) {
 		dims_[depth_++] = d;
 		volume_ *= d;
 	}
@@ -244,7 +244,7 @@ Shape &Shape::operator=(Shape &&src) {
 std::string Shape::to_string() const {
 	std::stringstream s;
 	s << '[';
-	for (std::uint32_t i = 0; i < depth_; ++i) {
+	for (int i = 0; i < depth_; ++i) {
 		if (i > 0) {
 			s << ',';
 		}
@@ -254,31 +254,31 @@ std::string Shape::to_string() const {
 	return s.str();
 }
 
-bool Shape::has_same_loo_dims(const Shape &rhs, std::uint32_t dim) const {
-	std::uint32_t nl = depth_ == dim + 1 ? dim : depth_;
+bool Shape::has_same_loo_dims(const Shape &rhs, int dim) const {
+	int nl = depth_ == dim + 1 ? dim : depth_;
 	while (nl > 0 && dims_[nl - 1] == 1) --nl;
-	std::uint32_t nr = rhs.depth_ == dim + 1 ? dim : rhs.depth_;
+	int nr = rhs.depth_ == dim + 1 ? dim : rhs.depth_;
 	while (nr > 0 && rhs.dims_[nr - 1] == 1) --nr;
 	bool p = nl == nr;
-	for (std::uint32_t i = 0; i < nl; ++i) {
+	for (int i = 0; i < nl; ++i) {
 		p = p && (dims_[i] == rhs.dims_[i] || i == dim);
 	}
 	return p;
 }
 
-Shape Shape::resize_dim(std::uint32_t dim, std::uint32_t m) const {
+Shape Shape::resize_dim(int dim, int m) const {
 	Shape ret = *this;
 	ret.update_dim(dim, m);
 	return ret;
 }
 
-Shape Shape::resize_batch(std::uint32_t batch) const {
+Shape Shape::resize_batch(int batch) const {
 	Shape ret = *this;
 	ret.update_batch(batch);
 	return ret;
 }
 
-void Shape::update_dim(std::uint32_t dim, std::uint32_t m) {
+void Shape::update_dim(int dim, int m) {
 	if (dim >= MAX_DEPTH) {
 		PRIMITIV_THROW_ERROR(
 			"Exceeds dimension depth limit at Shape::update_dim()."
@@ -286,8 +286,8 @@ void Shape::update_dim(std::uint32_t dim, std::uint32_t m) {
 	}
 	if (m == 0) PRIMITIV_THROW_ERROR("Could not set each dimension to 0.");
 	if (dim >= depth_) {
-		std::uint32_t new_depth = dim + 1;
-		for (std::uint32_t i = depth_; i < new_depth; ++i) dims_[i] = 1;
+		int new_depth = dim + 1;
+		for (int i = depth_; i < new_depth; ++i) dims_[i] = 1;
 		depth_ = new_depth;
 	}
 	volume_ = (volume_ / dims_[dim]) * m;
@@ -295,7 +295,7 @@ void Shape::update_dim(std::uint32_t dim, std::uint32_t m) {
 	while (depth_ > 0 && dims_[depth_ - 1] == 1) --depth_;
 }
 
-void Shape::update_batch(std::uint32_t batch) {
+void Shape::update_batch(int batch) {
 	if (batch == 0) PRIMITIV_THROW_ERROR("Could not set the batch size to 0.");
 	batch_ = batch;
 }
@@ -303,25 +303,25 @@ void Shape::update_batch(std::uint32_t batch) {
 
 Shape::Shape() : depth_(0), batch_(1), volume_(1) {}
 
-std::uint32_t Shape::operator[](std::uint32_t i) const { return i < depth_ ? dims_[i] : 1; }
+int Shape::operator[](int i) const { return i < depth_ ? dims_[i] : 1; }
 
-const std::vector<std::uint32_t> Shape::dims() const {
-	return std::vector<std::uint32_t>(&dims_[0], &dims_[depth_]);
+const std::vector<int> Shape::dims() const {
+	return std::vector<int>(&dims_[0], &dims_[depth_]);
 }
 
-std::uint32_t Shape::depth() const { return depth_; }
+int Shape::depth() const { return depth_; }
 
-std::uint32_t Shape::batch() const { return batch_; }
+int Shape::batch() const { return batch_; }
 
-std::uint32_t Shape::volume() const { return volume_; }
+int Shape::volume() const { return volume_; }
 
-std::uint32_t Shape::lower_volume(std::uint32_t dim) const {
-	std::uint32_t ret = 1, lim = std::min(dim, depth_);
-	for (std::uint32_t i = 0; i < lim; ++i) ret *= dims_[i];
+int Shape::lower_volume(int dim) const {
+	int ret = 1, lim = min(dim, depth_);
+	for (int i = 0; i < lim; ++i) ret *= dims_[i];
 		return ret;
 }
 
-std::uint32_t Shape::size() const { return batch_ * volume_; }
+int Shape::size() const { return batch_ * volume_; }
 
 bool Shape::operator==(const Shape &rhs) const {
 	return has_same_dims(rhs) && batch_ == rhs.batch_;
@@ -343,7 +343,7 @@ bool Shape::is_matrix() const { return depth() <= 2; }
 
 bool Shape::has_same_dims(const Shape &rhs) const {
 	bool ok = true;
-	for (std::uint32_t i = 0; i < depth_; ++i) ok = ok && dims_[i] == rhs.dims_[i];
+	for (int i = 0; i < depth_; ++i) ok = ok && dims_[i] == rhs.dims_[i];
 	return ok && depth_ == rhs.depth_;
 }
 #endif 

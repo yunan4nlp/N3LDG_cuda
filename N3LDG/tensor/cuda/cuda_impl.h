@@ -305,6 +305,32 @@ class CudaDevice : public Device {
 			dtype alpha = 1;
 			dtype beta =  0;
 
+			malloc(r, Shape(m, n));
+
+			cublasOperation_t transx = tx ? CUBLAS_OP_T : CUBLAS_OP_N;
+			int ldx = tx ? n : m;
+
+			cublasOperation_t transy = ty ? CUBLAS_OP_T : CUBLAS_OP_N;
+			int ldy = ty ? k : n;
+
+#if USE_FLOAT
+			(cublasSgemm(handle, transx, transy, m, k, n,
+						 &alpha, x.v, ldx, y.v, ldy, &beta, r.v, m));
+#else                   
+			(cublasDgemm(handle, transx, transy, m, k, n,
+						 &alpha, x.v, ldx, y.v, ldy, &beta, r.v, m));
+#endif                  
+		}
+
+		void Dmatmul(const LDG::Tensor &x, const LDG::Tensor &y, LDG::Tensor &r,
+				bool tx = false, bool ty = false) {
+			int m = tx ? x.shape().dims()[1] : x.shape().dims()[0];
+			int n = tx ?  x.shape().dims()[0] : x.shape().dims()[1];
+			int k = ty ? y.shape().dims()[0] : y.shape().dims()[1];
+
+			dtype alpha = 1;
+			dtype beta =  1;
+
 			cublasOperation_t transx = tx ? CUBLAS_OP_T : CUBLAS_OP_N;
 			int ldx = tx ? n : m;
 

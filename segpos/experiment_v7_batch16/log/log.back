@@ -1,0 +1,386 @@
+
+instance num: 23401
+
+instance num: 2078
+
+instance num: 2795
+Creating Alphabet...
+Embedding char file vocabulary size: 5726
+fine tuned char vocabulary size: 3729
+Embedding bichar file vocabulary size: 556940
+fine tuned bichar vocabulary size: 91437
+1000 2000 3000 4000 5000 6000 7000 8000 9000 10000 11000 12000 13000 14000 15000 16000 17000 18000 19000 20000 21000 22000 23000 23401 
+word embedding dim is 200
+-UNKNOWN- not found, using averaged value to initialize.
+OOV num is 0, total num is 5726, embedding oov ratio is 0
+unknown id5725
+word embedding dim is 200
+-UNKNOWN- not found, using averaged value to initialize.
+OOV num is 0, total num is 556940, embedding oov ratio is 0
+unknown id556939
+show hyper parameters
+maxlength = 513
+beam = 1
+delta = 0
+action_num = 35
+nnRegular = 1e-08
+adaAlpha = 0.001
+adaEps = 1e-06
+dropProb = 0.25
+batch = 16
+char_dim = 200
+char_tune = 1
+bichar_dim = 200
+bichar_tune = 1
+chartype_dim = 20
+char_concat_dim = 820
+char_hidden_dim = 200
+char_lstm_dim = 200
+length_dim = 20
+tag_dim = 100
+word_concat_dim = 520
+word_represent_dim = 200
+word_lstm_dim = 200
+state_feat_dim = 600
+state_hidden_dim = 200
+
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+state size: 3944
+action node size: 3680
+1000 2000 3000 4000 5000 6000 7000 8000 9000 10000 11000 12000 13000 14000 15000 16000 17000 18000 19000 20000 21000 22000 23000 maxIter = 1463000
+
+show options
+wordCutOff = 3
+featCutOff = 0
+charCutOff = 1
+bicharCutOff = 1
+initRange = 0.01
+maxIter = 1000
+batchSize = 16
+adaEps = 1e-06
+adaAlpha = 0.001
+regParameter = 1e-08
+dropProb = 0.25
+delta = 0
+clip = -1
+rpRatio = 0.05
+beam = 1
+wordStateSize = 200
+charStateSize = 200
+stateHiddenSize = 200
+startBeam = 10000
+wordEmbSize = 200
+lengthEmbSize = 20
+wordNgram = 2
+wordHiddenSize = 200
+wordRNNHiddenSize = 200
+wordEmbFineTune = 1
+wordEmbNormalize = 0
+wordEmbFile = 
+charEmbSize = 200
+charTypeEmbSize = 200
+bicharEmbSize = 200
+charcontext = 2
+charHiddenSize = 200
+charRNNHiddenSize = 200
+charEmbFineTune = 1
+charEmbNormalize = 0
+bicharEmbFineTune = 1
+bicharEmbNormalize = 0
+charEmbFile = /home/yunan/workspace/N3LDG_SEGPOS/emb/char.vec
+bicharEmbFile = /home/yunan/workspace/N3LDG_SEGPOS/emb/bichar.vec
+ngramEmbFile = 
+wordFile = 
+tagEmbSize = 100
+ngramEmbSize = 2
+tagStateSize = 100
+tagRNNHiddenSize = 100
+actionEmbSize = 20
+actionNgram = 2
+actionStateSize = 30
+actionRNNHiddenSize = 20
+verboseIter = 1000
+saveItermediate = 1
+train = 0
+maxInstance = -1
+outBest = .greedy-small
+base = 1
+
+show hyper parameters
+maxlength = 513
+beam = 1
+delta = 0
+action_num = 35
+nnRegular = 1e-08
+adaAlpha = 0.001
+adaEps = 1e-06
+dropProb = 0.25
+batch = 16
+char_dim = 200
+char_tune = 1
+bichar_dim = 200
+bichar_tune = 1
+chartype_dim = 20
+char_concat_dim = 820
+char_hidden_dim = 200
+char_lstm_dim = 200
+length_dim = 20
+tag_dim = 100
+word_concat_dim = 520
+word_represent_dim = 200
+word_lstm_dim = 200
+state_feat_dim = 600
+state_hidden_dim = 200
+
+##### Iteration 0
+current: 1000, Cost = 150.732, Correct(%) = 0.823599, time = 603.118
+current: 1, Correct(%) = 0.857408, time = 884.977
+Dev start.
+Dev finished. Total time taken is: 24.7362
+dev:
+Recall:	P=56562/59929=0.943817, Accuracy:	P=56562/59732=0.94693, Fmeasure:	0.945371
+Recall:	P=53046/59929=0.885147, Accuracy:	P=53046/59732=0.888067, Fmeasure:	0.886605
+Test start.
+Test finished. Total time taken is: 33.1181
+test:
+Recall:	P=76394/81579=0.936442, Accuracy:	P=76394/80990=0.943252, Fmeasure:	0.939835
+Recall:	P=71568/81579=0.877285, Accuracy:	P=71568/80990=0.883665, Fmeasure:	0.880463
+Exceeds best previous DIS of -1. Saving model file..
+##### Iteration 1
+current: 1000, Cost = 95.2239, Correct(%) = 0.942866, time = 602.228
+current: 2, Correct(%) = 0.945181, time = 885.759
+Dev start.
+Dev finished. Total time taken is: 24.8337
+dev:
+Recall:	P=57279/59929=0.955781, Accuracy:	P=57279/60068=0.953569, Fmeasure:	0.954674
+Recall:	P=54362/59929=0.907107, Accuracy:	P=54362/60068=0.905008, Fmeasure:	0.906056
+Test start.
+Test finished. Total time taken is: 33.2819
+test:
+Recall:	P=77622/81579=0.951495, Accuracy:	P=77622/81569=0.951612, Fmeasure:	0.951553
+Recall:	P=73586/81579=0.902021, Accuracy:	P=73586/81569=0.902132, Fmeasure:	0.902077
+Exceeds best previous DIS of 0.886605. Saving model file..
+##### Iteration 2
+current: 1000, Cost = 96.764, Correct(%) = 0.955205, time = 607.595
+current: 3, Correct(%) = 0.956317, time = 887.348
+Dev start.
+Dev finished. Total time taken is: 24.8948
+dev:
+Recall:	P=57480/59929=0.959135, Accuracy:	P=57480/60122=0.956056, Fmeasure:	0.957593
+Recall:	P=54876/59929=0.915684, Accuracy:	P=54876/60122=0.912744, Fmeasure:	0.914211
+Test start.
+Test finished. Total time taken is: 33.2861
+test:
+Recall:	P=77682/81579=0.95223, Accuracy:	P=77682/81584=0.952172, Fmeasure:	0.952201
+Recall:	P=73969/81579=0.906716, Accuracy:	P=73969/81584=0.906661, Fmeasure:	0.906688
+Exceeds best previous DIS of 0.906056. Saving model file..
+##### Iteration 3
+current: 1000, Cost = 64.1744, Correct(%) = 0.961165, time = 612.887
+current: 4, Correct(%) = 0.96167, time = 896.278
+Dev start.
+Dev finished. Total time taken is: 25.8351
+dev:
+Recall:	P=57512/59929=0.959669, Accuracy:	P=57512/60137=0.95635, Fmeasure:	0.958006
+Recall:	P=54971/59929=0.917269, Accuracy:	P=54971/60137=0.914096, Fmeasure:	0.91568
+Test start.
+Test finished. Total time taken is: 33.3853
+test:
+Recall:	P=77868/81579=0.95451, Accuracy:	P=77868/81672=0.953423, Fmeasure:	0.953967
+Recall:	P=74368/81579=0.911607, Accuracy:	P=74368/81672=0.910569, Fmeasure:	0.911088
+Exceeds best previous DIS of 0.914211. Saving model file..
+##### Iteration 4
+current: 1000, Cost = 81.4514, Correct(%) = 0.965284, time = 613.069
+current: 5, Correct(%) = 0.965909, time = 897.948
+Dev start.
+Dev finished. Total time taken is: 25.5142
+dev:
+Recall:	P=57617/59929=0.961421, Accuracy:	P=57617/59807=0.963382, Fmeasure:	0.962401
+Recall:	P=55186/59929=0.920856, Accuracy:	P=55186/59807=0.922735, Fmeasure:	0.921795
+Test start.
+Test finished. Total time taken is: 33.9596
+test:
+Recall:	P=77817/81579=0.953885, Accuracy:	P=77817/81273=0.957477, Fmeasure:	0.955678
+Recall:	P=74376/81579=0.911705, Accuracy:	P=74376/81273=0.915138, Fmeasure:	0.913418
+Exceeds best previous DIS of 0.91568. Saving model file..
+##### Iteration 5
+current: 1000, Cost = 93.3824, Correct(%) = 0.968388, time = 612.852
+current: 6, Correct(%) = 0.968737, time = 901.931
+Dev start.
+Dev finished. Total time taken is: 25.3723
+dev:
+Recall:	P=57799/59929=0.964458, Accuracy:	P=57799/60114=0.96149, Fmeasure:	0.962972
+Recall:	P=55291/59929=0.922608, Accuracy:	P=55291/60114=0.919769, Fmeasure:	0.921187
+Test start.
+Test finished. Total time taken is: 33.8442
+test:
+Recall:	P=78037/81579=0.956582, Accuracy:	P=78037/81618=0.956125, Fmeasure:	0.956353
+Recall:	P=74521/81579=0.913483, Accuracy:	P=74521/81618=0.913046, Fmeasure:	0.913264
+##### Iteration 6
+current: 1000, Cost = 54.9566, Correct(%) = 0.971037, time = 610.522
+current: 7, Correct(%) = 0.971106, time = 889.274
+Dev start.
+Dev finished. Total time taken is: 25.0738
+dev:
+Recall:	P=57898/59929=0.96611, Accuracy:	P=57898/60161=0.962384, Fmeasure:	0.964243
+Recall:	P=55444/59929=0.925161, Accuracy:	P=55444/60161=0.921594, Fmeasure:	0.923374
+Test start.
+Test finished. Total time taken is: 33.5205
+test:
+Recall:	P=78187/81579=0.958421, Accuracy:	P=78187/81666=0.9574, Fmeasure:	0.95791
+Recall:	P=74772/81579=0.916559, Accuracy:	P=74772/81666=0.915583, Fmeasure:	0.916071
+Exceeds best previous DIS of 0.921795. Saving model file..
+##### Iteration 7
+current: 1000, Cost = 54.1415, Correct(%) = 0.973542, time = 608.637
+current: 8, Correct(%) = 0.973758, time = 890.2
+Dev start.
+Dev finished. Total time taken is: 25.0891
+dev:
+Recall:	P=57682/59929=0.962506, Accuracy:	P=57682/59837=0.963985, Fmeasure:	0.963245
+Recall:	P=55379/59929=0.924077, Accuracy:	P=55379/59837=0.925498, Fmeasure:	0.924787
+Test start.
+Test finished. Total time taken is: 33.5076
+test:
+Recall:	P=78056/81579=0.956815, Accuracy:	P=78056/81260=0.960571, Fmeasure:	0.958689
+Recall:	P=74760/81579=0.916412, Accuracy:	P=74760/81260=0.92001, Fmeasure:	0.918208
+Exceeds best previous DIS of 0.923374. Saving model file..
+##### Iteration 8
+current: 1000, Cost = 40.3759, Correct(%) = 0.97561, time = 608.82
+current: 9, Correct(%) = 0.975679, time = 892.724
+Dev start.
+Dev finished. Total time taken is: 25.0068
+dev:
+Recall:	P=57735/59929=0.96339, Accuracy:	P=57735/59980=0.962571, Fmeasure:	0.96298
+Recall:	P=55339/59929=0.923409, Accuracy:	P=55339/59980=0.922624, Fmeasure:	0.923017
+Test start.
+Test finished. Total time taken is: 33.4287
+test:
+Recall:	P=78059/81579=0.956852, Accuracy:	P=78059/81405=0.958897, Fmeasure:	0.957873
+Recall:	P=74791/81579=0.916792, Accuracy:	P=74791/81405=0.918752, Fmeasure:	0.917771
+##### Iteration 9
+current: 1000, Cost = 53.4004, Correct(%) = 0.976105, time = 603.841
+current: 10, Correct(%) = 0.976547, time = 884.634
+Dev start.
+Dev finished. Total time taken is: 25.0248
+dev:
+Recall:	P=57794/59929=0.964375, Accuracy:	P=57794/59972=0.963683, Fmeasure:	0.964029
+Recall:	P=55425/59929=0.924844, Accuracy:	P=55425/59972=0.924181, Fmeasure:	0.924513
+Test start.
+Test finished. Total time taken is: 33.435
+test:
+Recall:	P=78079/81579=0.957097, Accuracy:	P=78079/81444=0.958683, Fmeasure:	0.957889
+Recall:	P=74815/81579=0.917087, Accuracy:	P=74815/81444=0.918607, Fmeasure:	0.917846
+##### Iteration 10
+current: 1000, Cost = 33.8461, Correct(%) = 0.977769, time = 602.922
+current: 11, Correct(%) = 0.977902, time = 881.907
+Dev start.
+Dev finished. Total time taken is: 25.3336
+dev:
+Recall:	P=57759/59929=0.96379, Accuracy:	P=57759/59995=0.96273, Fmeasure:	0.96326
+Recall:	P=55422/59929=0.924794, Accuracy:	P=55422/59995=0.923777, Fmeasure:	0.924285
+Test start.
+Test finished. Total time taken is: 33.7471
+test:
+Recall:	P=78162/81579=0.958114, Accuracy:	P=78162/81482=0.959255, Fmeasure:	0.958684
+Recall:	P=74944/81579=0.918668, Accuracy:	P=74944/81482=0.919761, Fmeasure:	0.919214
+##### Iteration 11
+current: 1000, Cost = 45.9184, Correct(%) = 0.979001, time = 614.184
+current: 12, Correct(%) = 0.979362, time = 896.83
+Dev start.
+Dev finished. Total time taken is: 24.49
+dev:
+Recall:	P=57792/59929=0.964341, Accuracy:	P=57792/59951=0.963987, Fmeasure:	0.964164
+Recall:	P=55375/59929=0.92401, Accuracy:	P=55375/59951=0.923671, Fmeasure:	0.923841
+Test start.
+Test finished. Total time taken is: 32.7423
+test:
+Recall:	P=78135/81579=0.957783, Accuracy:	P=78135/81481=0.958935, Fmeasure:	0.958359
+Recall:	P=74842/81579=0.917417, Accuracy:	P=74842/81481=0.918521, Fmeasure:	0.917969
+##### Iteration 12
+current: 1000, Cost = 41.3445, Correct(%) = 0.980431, time = 595.308
+current: 13, Correct(%) = 0.980737, time = 873.306
+Dev start.
+Dev finished. Total time taken is: 24.9632
+dev:
+Recall:	P=57724/59929=0.963206, Accuracy:	P=57724/59867=0.964204, Fmeasure:	0.963705
+Recall:	P=55281/59929=0.922442, Accuracy:	P=55281/59867=0.923397, Fmeasure:	0.922919
+Test start.
+Test finished. Total time taken is: 33.2371
+test:
+Recall:	P=78036/81579=0.95657, Accuracy:	P=78036/81270=0.960207, Fmeasure:	0.958385
+Recall:	P=74763/81579=0.916449, Accuracy:	P=74763/81270=0.919934, Fmeasure:	0.918188
+##### Iteration 13
+current: 1000, Cost = 42.5991, Correct(%) = 0.981679, time = 605.466
+current: 14, Correct(%) = 0.98169, time = 880.932
+Dev start.
+Dev finished. Total time taken is: 24.5317
+dev:
+Recall:	P=57815/59929=0.964725, Accuracy:	P=57815/60107=0.961868, Fmeasure:	0.963294
+Recall:	P=55438/59929=0.925061, Accuracy:	P=55438/60107=0.922322, Fmeasure:	0.92369
+Test start.
+Test finished. Total time taken is: 32.7777
+test:
+Recall:	P=78223/81579=0.958862, Accuracy:	P=78223/81678=0.9577, Fmeasure:	0.958281
+Recall:	P=74902/81579=0.918153, Accuracy:	P=74902/81678=0.91704, Fmeasure:	0.917596
+##### Iteration 14
+current: 1000, Cost = 35.8378, Correct(%) = 0.982568, time = 600.994

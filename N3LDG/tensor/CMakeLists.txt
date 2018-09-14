@@ -1,3 +1,16 @@
 #add_subdirectory(cuda)
+#add_subdirectory(cuda_v2)
 #add_subdirectory(cuda_v3)
-add_subdirectory(cuda_v2)
+#add_subdirectory(cuda_v4)
+#add_subdirectory(cuda_v5)
+#add_subdirectory(cuda_v6)
+#add_subdirectory(cuda_v7)
+#add_subdirectory(cuda_v8)
+if(DEVICE_TYPE MATCHES CUDA)
+	add_subdirectory(cuda_v9)
+endif()
+
+if(DEVICE_TYPE MATCHES EIGEN)
+	add_subdirectory(eigen3)
+endif()
+

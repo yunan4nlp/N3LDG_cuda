@@ -12,17 +12,35 @@ void Fadd_impl(const dtype* x, dtype** y,  dtype* r, int x_size, int size);
 
 void Fadd_impl(dtype** x, dtype** y,  dtype** r, int dim0, int size);
 
+void Fadd_inplace_impl(dtype* x, dtype** y, int x_size, int size);
+
+void Fadd_inplace_impl(dtype* x, const dtype *y, int size);
+
+void Fadd_inplace_impl(dtype** x, dtype** y, int dim0, int size);
+
 void Fsubtract_impl(const dtype* x, const dtype* y, dtype* r, int size);
+
+void Fsubtract_inplace_impl(dtype* x, const dtype* y, int size);
 
 void Fmultiply_impl(const dtype* x, const dtype* y, dtype* r, int size);
 
 void Fmultiply_impl(dtype** x, dtype** y, dtype** r, int dim0, int size);
 
+void Fmultiply_inplace_impl(dtype* x, const dtype* y, int size);
+
+void Fmultiply_inplace_impl(dtype** x, dtype** y, int dim0, int size);
+
 void Fdivide_impl(const dtype* x, const dtype* y, dtype* r, int size);
+
+void Fmultiply_scalar_impl(const dtype* x, const dtype* scalar, dtype* r, int size);
 
 void Fmultiply_scalar_impl(const dtype* x, const dtype y, dtype* r, int size);
 
+void Fmultiply_scalar_inplace_impl(dtype* x, const dtype y, int size);
+
 void Fadd_scalar_impl(const dtype* x, const dtype y, dtype* r, int size);
+
+void Fadd_scalar_inplace_impl(dtype* x, const dtype y, int size);
 
 void Fsquare_impl(const dtype* x, dtype* r, int size);
 

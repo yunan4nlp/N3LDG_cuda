@@ -101,7 +101,7 @@ class LookupTable {
 
 			E.initial(nDim, nVSize);
 			//E.val = 0;
-			device.zero(E.val);
+			DEV->zero(E.val);
 
 			std::cout << "word embedding dim is " << nDim << std::endl;
 
@@ -131,7 +131,7 @@ class LookupTable {
 						bHasUnknown = true;
 					}
 					indexers.insert(wordId);
-					dtype cur_data[nDim];
+					vector<dtype> cur_data(nDim);
 					for (int idy = 0; idy < nDim; idy++) {
 						dtype curValue = atof(vecInfo[idy + 1].c_str());
 						sum[idy] += curValue;
@@ -146,7 +146,7 @@ class LookupTable {
 			if (count == 0) {
 				//E.val.random(sqrt(3.0 / nDim));
 				dtype val = sqrt(3.0 / nDim);
-				device.random_uniform(E.val, E.val.shape(), -val, val);
+				DEV->random_uniform(E.val, E.val.shape(), -val, val);
 
 				std::cout << "find no overlapped lexicons in the embedding file" << std::endl;
 				return false;
@@ -177,7 +177,7 @@ class LookupTable {
 			if (normalize) {
 				//E.val.norm2one();
 			}
-			device.set(E.val, E_v, nDim * nVSize);
+			DEV->set(E.val, E_v, nDim * nVSize);
 			delete []E_v;
 			return true;
 		}
@@ -276,7 +276,7 @@ class LookupNode : public Node {
 				//cout << "id:   "<< xid << endl;
 			} else {
 				//val.zero();
-				device.zero(val);
+				DEV->zero(val);
 			}
 		}
 
@@ -337,15 +337,25 @@ class LookupExecute :public Execute {
 				LookupNode* ptr = (LookupNode*)batch[idx];
 				vec_indexes[idx] = (ptr->xid);
 				vec_val[idx] = (&ptr->val);
+				ptr->degree = -1;
 			}
 
 			LookupNode* ptr = (LookupNode*)batch[0];
-			device.FLookup(ptr->param->E.val, vec_indexes, vec_val);
+			DEV->FLookup(ptr->param->E.val, vec_indexes, vec_val);
 
-			for (int idx = 0; idx < count; idx++) {
-				LookupNode* ptr = (LookupNode*)batch[idx];
-				ptr->forward_drop(bTrain);
+			drop_value = ptr->drop_value;
+			if(drop_value > 0) {
+				if(bTrain)
+					DEV->Fdropout(vec_val, drop_value, mask, vec_val);
+				else
+					DEV->Fdropout(vec_val, drop_value, vec_val);
 			}
+			/*
+			   for (int idx = 0; idx < count; idx++) {
+			   LookupNode* ptr = (LookupNode*)batch[idx];
+			   ptr->forward_drop(bTrain);
+			   }
+			 */
 		}
 
 		inline void backward() {
@@ -353,7 +363,7 @@ class LookupExecute :public Execute {
 			//#pragma omp parallel for schedule(static,1)
 			for (int idx = 0; idx < count; idx++) {
 				LookupNode* ptr = (LookupNode*)batch[idx];
-				ptr->backward_drop();
+				//	ptr->backward_drop();
 
 				//ptr->backward();
 			}
@@ -368,8 +378,13 @@ class LookupExecute :public Execute {
 				}
 			}
 			LookupNode* ptr = (LookupNode*)batch[0];
-			if(vec_xid.size() > 0)
-				device.DLookup(ptr->param->E.grad, vec_xid, vec_loss);
+
+			if(vec_xid.size() > 0) {
+				if (drop_value > 0) {
+					DEV->Ddropout(vec_loss, mask);
+				}
+				DEV->DLookup(ptr->param->E.grad, vec_xid, vec_loss);
+			}
 		}
 };
 

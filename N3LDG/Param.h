@@ -8,7 +8,7 @@
 #ifndef PARAM_H_
 #define PARAM_H_
 
-#include "Eigen/Dense"
+//#include "Eigen/Dense"
 #include "BaseParam.h"
 
 
@@ -20,7 +20,7 @@ class Param : public BaseParam {
 		LDG::Tensor aux_mean;
 		int iter;
 
-		LDG::Tensor cpu_grad;
+		//LDG::Tensor cpu_grad;
 
 		LDG::Tensor v_r;
 		LDG::Tensor grad_square;
@@ -44,35 +44,35 @@ class Param : public BaseParam {
 			//grad.init(outDim, inDim);
 			//aux_square.init(outDim, inDim);
 			//aux_mean.init(outDim, inDim);
-			//device.malloc(val, Shape({outDim, inDim}));
-			device.init(grad, Shape({outDim, inDim}));
-			device.init(aux_square, Shape({outDim, inDim}));
-			device.init(aux_mean, Shape({outDim, inDim}));
+			//DEV->malloc(val, Shape({outDim, inDim}));
+			DEV->init(grad, Shape({outDim, inDim}));
+			DEV->init(aux_square, Shape({outDim, inDim}));
+			DEV->init(aux_mean, Shape({outDim, inDim}));
 
 			dtype bound = sqrt(6.0 / (outDim + inDim + 1));
 			//val.random(bound);
-			device.random_uniform(val, Shape({outDim, inDim}), -bound, bound);
+			DEV->random_uniform(val, Shape({outDim, inDim}), -bound, bound);
 
-			device.init(v_r, val.shape()); 
-			device.init(grad_square, grad.shape());
-			device.init(aux_eps, aux_square.shape());
-			device.init(aux_sqrt, aux_square.shape());
-			device.init(grad_alpha, grad.shape());
-			device.init(grad_aux, grad.shape());
+			DEV->init(v_r, val.shape()); 
+			DEV->init(grad_square, grad.shape());
+			DEV->init(aux_eps, aux_square.shape());
+			DEV->init(aux_sqrt, aux_square.shape());
+			DEV->init(grad_alpha, grad.shape());
+			DEV->init(grad_aux, grad.shape());
 
-			device.init(belta_aux_mean, aux_mean.shape());
-			device.init(belta_grad, grad.shape());
-			device.init(belta_aux_square, aux_square.shape());
-			device.init(belta_grad_square, grad.shape());            
-			device.init(aux_square_eps, aux_square.shape());
-			device.init(aux_square_eps_sqrt, aux_square.shape());
-			device.init(aux_mean_lrt, aux_mean.shape());
-			device.init(val_delta, val.shape());
+			DEV->init(belta_aux_mean, aux_mean.shape());
+			DEV->init(belta_grad, grad.shape());
+			DEV->init(belta_aux_square, aux_square.shape());
+			DEV->init(belta_grad_square, grad.shape());            
+			DEV->init(aux_square_eps, aux_square.shape());
+			DEV->init(aux_square_eps_sqrt, aux_square.shape());
+			DEV->init(aux_mean_lrt, aux_mean.shape());
+			DEV->init(val_delta, val.shape());
 			iter = 0;
 
-			cpu_grad.device_type = CPU;	
-			cpu_grad.shape_ = grad.shape();
-			cpu_grad.v = new dtype[grad.shape().size()];
+			//cpu_grad.device_type = CPU;	
+			//cpu_grad.shape_ = grad.shape();
+			//cpu_grad.v = new dtype[grad.shape().size()];
 		}
 
 		inline int outDim() {
@@ -87,59 +87,70 @@ class Param : public BaseParam {
 
 		inline void clearGrad() {
 			//grad.zero();
-			device.zero(grad);
+			DEV->zero(grad);
 		}
 
 		inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) {
 			if (outDim() > 1 && inDim() > 1) {
-				device.Fmultiply_scalar(val, reg, v_r);
-				device.Fadd(grad, v_r, grad);
+				DEV->Fmultiply_scalar(val, reg, v_r);
+				DEV->Fadd_inplace(grad, v_r);
+				//DEV->Fadd(grad, v_r, grad);
 				//grad.vec() = grad.vec() + val.vec() * reg;
 			}
-			device.Fsquare(grad, grad_square);
-			device.Fadd(aux_square, grad_square, aux_square);
+			DEV->Fsquare(grad, grad_square);
+			DEV->Fadd_inplace(aux_square, grad_square);
+			//DEV->Fadd(aux_square, grad_square, aux_square);
 			//aux_square.vec() = aux_square.vec() + grad.vec().square();
 
-			device.Fadd_scalar(aux_square, eps, aux_eps);
-			device.Fsqrt(aux_eps, aux_sqrt);
+			DEV->Fadd_scalar(aux_square, eps, aux_eps);
+			DEV->Fsqrt(aux_eps, aux_sqrt);
 
-			device.Fmultiply_scalar(grad, alpha, grad_alpha);
+			DEV->Fmultiply_scalar(grad, alpha, grad_alpha);
 
-			device.Fdivide(grad_alpha, aux_sqrt, grad_aux);
+			DEV->Fdivide(grad_alpha, aux_sqrt, grad_aux);
 
+			DEV->Fsubtract_inplace(val, grad_aux);
 
-			device.Fsubtract(val, grad_aux, val);
+			//DEV->Fsubtract(val, grad_aux, val);
 			//val.vec() = val.vec() - grad.vec() * alpha / (aux_square.vec() + eps).sqrt();
 		}
 
 		inline void updateAdam(dtype belta1, dtype belta2, dtype alpha, dtype reg, dtype eps) {
 			if (outDim() > 1 && inDim() > 1) {
-				device.Fmultiply_scalar(val, reg, v_r);
-				device.Fadd(grad, v_r, grad);
+				DEV->Fmultiply_scalar(val, reg, v_r);
+				DEV->Fadd_inplace(grad, v_r);
+				//DEV->Fadd(grad, v_r, grad);
 			}
-			device.Fmultiply_scalar(aux_mean, belta1, belta_aux_mean);
 
-			device.Fmultiply_scalar(grad, 1 - belta1, belta_grad);
+			DEV->Fmultiply_scalar(aux_mean, belta1, belta_aux_mean);
 
-			device.Fadd(belta_aux_mean, belta_grad, aux_mean);
-			device.Fmultiply_scalar(aux_square, belta2, belta_aux_square);
+			DEV->Fmultiply_scalar(grad, 1 - belta1, belta_grad);
 
+			DEV->Fadd(belta_aux_mean, belta_grad, aux_mean);
 
-			device.Fsquare(grad, grad_square);
+			DEV->Fmultiply_scalar(aux_square, belta2, belta_aux_square);
 
-			device.Fmultiply_scalar(grad_square, (1 - belta2), belta_grad_square);
+			DEV->Fsquare(grad, grad_square);
 
-			device.Fadd(belta_aux_square, belta_grad_square, aux_square);
+			DEV->Fmultiply_scalar(grad_square, (1 - belta2), belta_grad_square);
+
+			DEV->Fadd(belta_aux_square, belta_grad_square, aux_square);
+
 			dtype lr_t = alpha * sqrt(1 - pow(belta2, iter + 1)) / (1 - pow(belta1, iter + 1));
 
-			device.Fadd_scalar(aux_square, eps, aux_square_eps);
+			DEV->Fadd_scalar(aux_square, eps, aux_square_eps);
 
-			device.Fsqrt(aux_square_eps, aux_square_eps_sqrt);
+			DEV->Fsqrt(aux_square_eps, aux_square_eps_sqrt);
 
-			device.Fmultiply_scalar(aux_mean, lr_t, aux_mean_lrt);
+			DEV->Fmultiply_scalar(aux_mean, lr_t, aux_mean_lrt);
 
-			device.Fdivide(aux_mean_lrt, aux_square_eps_sqrt, val_delta);
-			device.Fsubtract(val, val_delta, val);
+			DEV->Fdivide(aux_mean_lrt, aux_square_eps_sqrt, val_delta);
+
+			DEV->Fsubtract_inplace(val, val_delta);
+
+			//DEV->Fsubtract(val, val_delta, val);
+
+
 			iter++;
 			/*
 			   if (val.col > 1 && val.row > 1)grad.vec() = grad.vec() + val.vec() * reg;
@@ -173,17 +184,19 @@ class Param : public BaseParam {
 		inline dtype squareGradNorm() {
 			dtype sumNorm = 0.0;
 
-			device.to_cpu(grad, cpu_grad);
+			//DEV->to_cpu(grad, cpu_grad);
+			vector<dtype> vec_grad = DEV->to_vector(grad);
 			int size = grad.shape().size();
 			for (int i = 0; i < size; i++) {
-				sumNorm += cpu_grad.v[i] * cpu_grad.v[i];
+				sumNorm += vec_grad[i] * vec_grad[i];
 			}
 			return sumNorm;
 		}
 
 		inline void rescaleGrad(dtype scale) {
 			//grad.vec() = grad.vec() * scale;
-			device.Fmultiply_scalar(grad, scale, grad);
+			DEV->Fmultiply_scalar_inplace(grad, scale);
+			//DEV->Fmultiply_scalar(grad, scale, grad);
 		}
 
 		inline void save(std::ofstream &os)const {

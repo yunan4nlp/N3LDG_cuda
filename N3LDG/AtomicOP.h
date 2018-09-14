@@ -2,22 +2,22 @@
 #define ATOMICIOP_H_
 
 /*
-*  AtomicOP.h:
-*  a list of atomic operations
-*
-*  Created on: June 11, 2017
-*      Author: yue_zhang(suda), mszhang
-*/
+ *  AtomicOP.h:
+ *  a list of atomic operations
+ *
+ *  Created on: June 11, 2017
+ *      Author: yue_zhang(suda), mszhang
+ */
 
 /*
-ActivateNode
-TanhNode
-SigmoidNode
-ReluNode
-IndexNode
-PSubNode
-PDotNode
-*/
+   ActivateNode
+   TanhNode
+   SigmoidNode
+   ReluNode
+   IndexNode
+   PSubNode
+   PDotNode
+ */
 
 #include "Param.h"
 #include "MyLib.h"
@@ -26,60 +26,60 @@ PDotNode
 #include "ModelUpdate.h"
 
 class TanhNode :public Node {
-  public:
-    PNode in;
+	public:
+		PNode in;
+		LDG::Tensor lx;
 
-  public:
-    TanhNode() : Node() {
-        in = NULL;
-        node_type = "tanh";
-    }
+	public:
+		TanhNode() : Node() {
+			in = NULL;
+			node_type = "tanh";
+		}
 
-    ~TanhNode() {
-        in = NULL;
-    }
+		~TanhNode() {
+			in = NULL;
+		}
 
-    inline void clearValue() {
-        Node::clearValue();
-        in = NULL;
-    }
+		inline void clearValue() {
+			Node::clearValue();
+			in = NULL;
+		}
 
-  public:
-    void forward(Graph *cg, PNode x) {
-        in = x;
-        degree = 0;
-        in->addParent(this);
-        cg->addNode(this);
-    }
+	public:
+		void forward(Graph *cg, PNode x) {
+			in = x;
+			degree = 0;
+			in->addParent(this);
+			cg->addNode(this);
+		}
 
-  public:
-    inline void compute() {
-		device.unaryExp(in->val, val, &device, &Device::Ftanh);
-        //val.vec() = in->val.vec().unaryExpr(ptr_fun(ftanh));
-    }
+	public:
+		/*
+		   inline void compute() {
+		   DEV->unaryExp(in->val, val, DEV, &Device::Ftanh);
+		   }
 
-    void backward() {
-		LDG::Tensor v_d;
-		device.init(v_d, in->val.shape());
-		device.binaryExp(in->val, val, v_d, &device, &Device::Dtanh);
+		   void backward() {
+		   LDG::Tensor v_d;
+		   DEV->init(v_d, in->val.shape());
+		   DEV->binaryExp(in->val, val, v_d, DEV, &Device::Dtanh);
 
-		LDG::Tensor temp_loss;
-		device.init(temp_loss, in->loss.shape());
-		device.Fmatmul(loss, v_d, temp_loss);
+		   LDG::Tensor temp_loss;
+		   DEV->init(temp_loss, in->loss.shape());
+		   DEV->Fmatmul(loss, v_d, temp_loss);
 
-		device.Fadd(in->loss, temp_loss, in->loss);
+		   DEV->Fadd_inplace(in->loss, temp_loss);
+		   }
+		 */
 
-        //in->loss.vec() += loss.vec() * in->val.vec().binaryExpr(val.vec(), ptr_fun(dtanh));
-    }
+	public:
+		inline PExecute generate(bool bTrain);
 
-  public:
-    inline PExecute generate(bool bTrain);
-
-    // better to rewrite for deep understanding
-    inline bool typeEqual(PNode other) {
-        bool result = Node::typeEqual(other);
-        return result;
-    }
+		// better to rewrite for deep understanding
+		inline bool typeEqual(PNode other) {
+			bool result = Node::typeEqual(other);
+			return result;
+		}
 };
 
 class TanhExecute :public Execute {
@@ -96,18 +96,22 @@ class TanhExecute :public Execute {
 			int count = batch.size();
 
 			vec_x.clear();
-		   	vec_val.clear();
+			vec_val.clear();
+			TanhNode* ptr = (TanhNode*)batch[0];
+			drop_value = ptr->drop_value;
 			for (int idx = 0; idx < count; idx++) {
 				TanhNode* ptr = (TanhNode*)batch[idx];
 				vec_x.push_back(&ptr->in->val);
 				vec_val.push_back(&ptr->val);
+				ptr->degree = -1;
 			}
 
-			device.unaryExp(vec_x, vec_val, &device, &Device::Ftanh);
-
-			for (int idx = 0; idx < count; idx++) {
-				TanhNode* ptr = (TanhNode*)batch[idx];
-				ptr->forward_drop(bTrain);
+			DEV->unaryExp(vec_x, vec_val, DEV, &Device::Ftanh);
+			if(drop_value > 0) {
+				if(bTrain)
+					DEV->Fdropout(vec_val, drop_value, mask, vec_val);
+				else
+					DEV->Fdropout(vec_val, drop_value, vec_val);
 			}
 		}
 
@@ -115,30 +119,29 @@ class TanhExecute :public Execute {
 		inline void backward() {
 			int count = batch.size();
 			vector<LDG::PTensor> vec_loss, vec_in_loss;
-
-			LDG::Tensor array_lx[count];
 			vector<LDG::PTensor> vec_lx;
 			for (int idx = 0; idx < count; idx++) {
 				TanhNode* ptr = (TanhNode*)batch[idx];
-				ptr->backward_drop();
 				vec_loss.push_back(&ptr->loss);
 				vec_in_loss.push_back(&ptr->in->loss);
-
-				device.init(array_lx[idx], ptr->in->loss.shape());
-				vec_lx.push_back(&array_lx[idx]);
+				vec_lx.push_back(&ptr->lx);
 			}
 
-			device.binaryExp(vec_x, vec_val, vec_lx, &device, &Device::Dtanh);
-			device.Fmultiply(vec_loss, vec_lx, vec_lx);
-			device.Fadd(vec_in_loss, vec_lx, vec_in_loss);
+			if (drop_value > 0) {
+				DEV->Ddropout(vec_loss, mask);
+			}
+
+			DEV->binaryExp(vec_x, vec_val, vec_lx, DEV, &Device::Dtanh);
+			DEV->Fmultiply_inplace(vec_lx, vec_loss);
+			DEV->Fadd_inplace(vec_in_loss, vec_lx);
 		}
 };
 
 inline PExecute TanhNode::generate(bool bTrain) {
-    TanhExecute* exec = new TanhExecute();
-    exec->batch.push_back(this);
-    exec->bTrain = bTrain;
-    return exec;
+	TanhExecute* exec = new TanhExecute();
+	exec->batch.push_back(this);
+	exec->bTrain = bTrain;
+	return exec;
 };
 
 class PDotNode : public Node {
@@ -176,28 +179,34 @@ class PDotNode : public Node {
 
 	public:
 		inline void compute() {
-			device.zero(val);	
-			device.Fmatmul(in1->val, in2->val, val, true, false);
+			DEV->zero(val);	
+			DEV->Fmatmul(in1->val, in2->val, val, true, false);
 			//val[0] = 0.0;
 			//for (int idx = 0; idx < in1->dim; idx++) {
-				//val[0] += in1->val[idx] * in2->val[idx];
+			//val[0] += in1->val[idx] * in2->val[idx];
 			//}
 		}
 
 		void backward() {
-			LDG::Tensor cpu_loss;
-			cpu_loss.device_type == CPU;
-			cpu_loss.shape_ = loss.shape();
-			cpu_loss.v = new dtype[loss.shape().size()];
-			device.to_cpu(loss, cpu_loss);
+			//LDG::Tensor cpu_loss;
+			//cpu_loss.device_type == CPU;
+			//cpu_loss.shape_ = loss.shape();
+			//cpu_loss.v = new dtype[loss.shape().size()];
+			//DEV->to_cpu(loss, cpu_loss);
+			//vector<dtype> loss_val = DEV->to_vector(loss);
 
 			LDG::Tensor temp_loss1, temp_loss2;
-			device.init(temp_loss1, in1->loss.shape());
-			device.init(temp_loss2, in2->loss.shape());
-			device.Fmultiply_scalar(in2->val, cpu_loss.v[0], temp_loss1);
-			device.Fmultiply_scalar(in1->val, cpu_loss.v[0], temp_loss2);
-			device.Fadd(in1->loss, temp_loss1, in1->loss);
-			device.Fadd(in2->loss, temp_loss2, in2->loss);
+			//DEV->Fmultiply_scalar(in2->val, loss_val[0], temp_loss1);
+			//DEV->Fmultiply_scalar(in1->val, loss_val[0], temp_loss2);
+
+			DEV->Fmultiply_scalar(in2->val, loss, temp_loss1);
+			DEV->Fmultiply_scalar(in1->val, loss, temp_loss2);
+
+			DEV->Fadd_inplace(in1->loss, temp_loss1);
+			DEV->Fadd_inplace(in2->loss, temp_loss2);
+
+			//DEV->Fadd(in1->loss, temp_loss1, in1->loss);
+			//DEV->Fadd(in2->loss, temp_loss2, in2->loss);
 		}
 
 	public:
@@ -212,25 +221,46 @@ class PDotNode : public Node {
 class PDotExecute :public Execute {
 	public:
 		bool bTrain;
+		vector<LDG::PTensor> vec_in_val1, vec_in_val2, vec_val;
 	public:
 		inline void  forward() {
 			int count = batch.size();
-			//#pragma omp parallel for schedule(static,1)
+			vec_in_val1.resize(count);
+			vec_in_val2.resize(count);
+			vec_val.resize(count);
+			PDotNode* ptr = (PDotNode*)batch[0];
+			drop_value = ptr->drop_value;
 			for (int idx = 0; idx < count; idx++) {
 				PDotNode* ptr = (PDotNode*)batch[idx];
-				ptr->compute();
-				ptr->forward_drop(bTrain);
+				vec_in_val1[idx] = &(ptr->in1->val);
+				vec_in_val2[idx] = &(ptr->in2->val);
+				vec_val[idx] = &(ptr->val);
+				ptr->degree = -1;
+			}
+			DEV->Fdot(vec_in_val1, vec_in_val2, vec_val, true, false);
+
+			if(drop_value > 0) {
+				if(bTrain)
+					DEV->Fdropout(vec_val, drop_value, mask, vec_val);
+				else
+					DEV->Fdropout(vec_val, drop_value, vec_val);
 			}
 		}
 
 		inline void backward() {
 			int count = batch.size();
-			//#pragma omp parallel for schedule(static,1)
+			vector<LDG::PTensor> vec_loss, vec_in_loss1, vec_in_loss2;
 			for (int idx = 0; idx < count; idx++) {
 				PDotNode* ptr = (PDotNode*)batch[idx];
-				ptr->backward_drop();
-				ptr->backward();
+				vec_loss.push_back(&ptr->loss);
+				vec_in_loss1.push_back(&ptr->in1->loss);
+				vec_in_loss2.push_back(&ptr->in2->loss);
 			}
+			if (drop_value > 0) {
+				DEV->Ddropout(vec_loss, mask);
+			}
+			DEV->Ddot(vec_in_loss2, vec_in_val1, vec_loss);
+			DEV->Ddot(vec_in_loss1, vec_in_val2, vec_loss);
 		}
 };
 
